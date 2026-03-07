@@ -4,6 +4,7 @@ import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'character_sprite.dart';
 
@@ -17,6 +18,8 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   @override
   Future<void> onLoad() async {
     images.prefix = '';
+    GoogleFonts.vt323();
+    await GoogleFonts.pendingFonts;
     await _spawnCharacter();
   }
 
