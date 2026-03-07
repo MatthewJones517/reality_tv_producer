@@ -61,12 +61,14 @@ class Character {
   final String firstName;
   final String lastName;
   final List<Attribute> attributes;
+  final String funFact;
   final CharacterParts parts;
 
   const Character({
     required this.firstName,
     required this.lastName,
     required this.attributes,
+    required this.funFact,
     required this.parts,
   });
 

@@ -60,5 +60,16 @@ class CharacterSprite extends PositionComponent
       position: Vector2(displaySize.x / 2, displaySize.y + 28),
       textRenderer: attrRenderer,
     ));
+
+    final factRenderer = TextPaint(
+      style: const TextStyle(fontSize: 12, color: Color(0xFF999999)),
+    );
+
+    add(TextComponent(
+      text: '"${character.funFact}"',
+      anchor: Anchor.topCenter,
+      position: Vector2(displaySize.x / 2, displaySize.y + 48),
+      textRenderer: factRenderer,
+    ));
   }
 }
