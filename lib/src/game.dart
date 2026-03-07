@@ -21,6 +21,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
         );
 
   bool _onTitleScreen = true;
+  String? showName;
 
   @override
   Color backgroundColor() => const Color(0xFF000000);
@@ -32,17 +33,24 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     world.add(TitleScreen());
   }
 
+  void submitShowName(String name) {
+    showName = name;
+    overlays.remove('showName');
+    // TODO: proceed to character selection
+  }
+
   @override
   KeyEventResult onKeyEvent(
     KeyEvent event,
     Set<LogicalKeyboardKey> keysPressed,
   ) {
-    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
+    if (event is KeyDownEvent &&
+        event.logicalKey == LogicalKeyboardKey.space) {
       if (_onTitleScreen) {
         _onTitleScreen = false;
-        world.removeAll(world.children);
+        overlays.add('showName');
+        return KeyEventResult.handled;
       }
-      return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
   }
