@@ -36,6 +36,12 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   void submitShowName(String name) {
     showName = name;
     overlays.remove('showName');
+    overlays.add('howToPlay');
+  }
+
+  void finishHowToPlay() {
+    overlays.remove('howToPlay');
+    world.removeAll(world.children);
     // TODO: proceed to character selection
   }
 

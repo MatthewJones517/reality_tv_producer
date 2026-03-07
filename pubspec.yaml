@@ -69,6 +69,7 @@ flutter:
     - assets/characters/legs/
     - assets/characters/torso/
     - assets/title_screen/
+    - assets/tokens/
 
   fonts:
     - family: CinzelDecorative
