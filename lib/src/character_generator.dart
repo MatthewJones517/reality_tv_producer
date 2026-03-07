@@ -62,67 +62,46 @@ class CharacterGenerator {
     return filtered.isNotEmpty ? filtered : paths;
   }
 
-  /// Extracts the skin-tone color from a head path.
-  /// Head format: `{gender}_head_{color}.png`
-  static String _headColor(String headPath, String gender) {
-    final name = _filename(headPath);
-    // Strip "{gender}_head_" prefix (gender already includes trailing '_').
-    return name.substring(gender.length + 5); // 5 = "head_".length
+  /// Body format: `{gender}_{color}` → strip gender prefix.
+  static String _bodyColor(String path, String gender) =>
+      _filename(path).substring(gender.length);
+
+  /// Head format: `{gender}[_plump]_head_{color}` → everything after `_head_`.
+  static String _headColor(String path) {
+    final name = _filename(path);
+    const marker = '_head_';
+    final idx = name.indexOf(marker);
+    return name.substring(idx + marker.length);
   }
 
-  /// Filters face paths to those whose color suffix matches [color].
-  /// Face format: `{gender}_{expression}_{color}.png`
-  static List<String> _facesWithColor(
-    List<String> faces,
-    String gender,
-    String color,
-  ) {
-    return faces.where((p) {
-      final withoutGender = _filename(p).substring(gender.length);
-      final faceColor =
-          withoutGender.substring(withoutGender.indexOf('_') + 1);
-      return faceColor == color;
-    }).toList();
-  }
-
-  /// Filters body paths to those whose color suffix matches [color].
-  /// Body format: `{gender}_{color}.png`
-  static List<String> _bodiesWithColor(
-    List<String> bodies,
-    String gender,
-    String color,
-  ) {
-    return bodies.where((p) {
-      final bodyColor = _filename(p).substring(gender.length);
-      return bodyColor == color;
-    }).toList();
+  /// Face format: `{gender}_{expression}_{color}` → everything after first `_`
+  /// past the gender prefix (expression is always one token).
+  static String _faceColor(String path, String gender) {
+    final rest = _filename(path).substring(gender.length);
+    return rest.substring(rest.indexOf('_') + 1);
   }
 
   static Future<CharacterParts> generate() async {
     final assets = await _getAssets();
     final gender = _random.nextBool() ? 'male_' : 'female_';
 
-    // Head determines the skin-tone color.
-    final heads = _filterGender(assets['heads']!, gender);
-    final head = _pick(heads);
-    final color = _headColor(head, gender);
+    // Body determines the skin-tone color (simplest naming scheme).
+    final bodies = _filterGender(assets['body']!, gender);
+    final body = _pick(bodies);
+    final color = _bodyColor(body, gender);
 
-    // Body and face must share the same skin color.
-    final bodies = _bodiesWithColor(
-      _filterGender(assets['body']!, gender),
-      gender,
-      color,
-    );
-    final faces = _facesWithColor(
-      _filterGender(assets['faces']!, gender),
-      gender,
-      color,
-    );
+    // Head and face must share the same skin color.
+    final heads = _filterGender(assets['heads']!, gender)
+        .where((p) => _headColor(p) == color)
+        .toList();
+    final faces = _filterGender(assets['faces']!, gender)
+        .where((p) => _faceColor(p, gender) == color)
+        .toList();
 
     return CharacterParts(
-      body: _pick(bodies.isNotEmpty ? bodies : assets['body']!),
-      head: head,
-      face: _pick(faces.isNotEmpty ? faces : assets['faces']!),
+      body: body,
+      head: _pick(heads.isNotEmpty ? heads : _filterGender(assets['heads']!, gender)),
+      face: _pick(faces.isNotEmpty ? faces : _filterGender(assets['faces']!, gender)),
       hair: _pick(assets['hair']!),
       legs: _pick(assets['legs']!),
       torso: _pick(_filterGender(assets['torso']!, gender)),
