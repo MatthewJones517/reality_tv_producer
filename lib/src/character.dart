@@ -1,3 +1,41 @@
+enum Attribute {
+  flirty,
+  nosy,
+  loyal,
+  dramatic,
+  oblivious,
+  vindictive,
+  charming,
+  paranoid,
+  chatty,
+  stoic,
+  scheming,
+  forgetful,
+  jealous,
+  generous,
+  grudgeHolder;
+
+  static const labels = {
+    flirty: 'Flirty',
+    nosy: 'Nosy',
+    loyal: 'Loyal',
+    dramatic: 'Dramatic',
+    oblivious: 'Oblivious',
+    vindictive: 'Vindictive',
+    charming: 'Charming',
+    paranoid: 'Paranoid',
+    chatty: 'Chatty',
+    stoic: 'Stoic',
+    scheming: 'Scheming',
+    forgetful: 'Forgetful',
+    jealous: 'Jealous',
+    generous: 'Generous',
+    grudgeHolder: 'Grudge-holder',
+  };
+
+  String get label => labels[this]!;
+}
+
 class CharacterParts {
   final String body;
   final String head;
@@ -22,11 +60,13 @@ class CharacterParts {
 class Character {
   final String firstName;
   final String lastName;
+  final List<Attribute> attributes;
   final CharacterParts parts;
 
   const Character({
     required this.firstName,
     required this.lastName,
+    required this.attributes,
     required this.parts,
   });
 

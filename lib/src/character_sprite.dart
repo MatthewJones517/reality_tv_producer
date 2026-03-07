@@ -40,18 +40,25 @@ class CharacterSprite extends PositionComponent
       ));
     }
 
-    add(
-      TextComponent(
-        text: character.fullName,
-        anchor: Anchor.topCenter,
-        position: Vector2(displaySize.x / 2, displaySize.y + 4),
-        textRenderer: TextPaint(
-          style: const TextStyle(
-            fontSize: 20,
-            color: Color(0xFFFFFFFF),
-          ),
-        ),
-      ),
+    final nameRenderer = TextPaint(
+      style: const TextStyle(fontSize: 20, color: Color(0xFFFFFFFF)),
     );
+    final attrRenderer = TextPaint(
+      style: const TextStyle(fontSize: 14, color: Color(0xFFBBBBBB)),
+    );
+
+    add(TextComponent(
+      text: character.fullName,
+      anchor: Anchor.topCenter,
+      position: Vector2(displaySize.x / 2, displaySize.y + 4),
+      textRenderer: nameRenderer,
+    ));
+
+    add(TextComponent(
+      text: character.attributes.map((a) => a.label).join(' · '),
+      anchor: Anchor.topCenter,
+      position: Vector2(displaySize.x / 2, displaySize.y + 28),
+      textRenderer: attrRenderer,
+    ));
   }
 }

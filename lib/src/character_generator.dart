@@ -128,9 +128,13 @@ class CharacterGenerator {
         .where((p) => _faceColor(p, gender) == color)
         .toList();
 
+    final shuffled = List.of(Attribute.values)..shuffle(_random);
+    final attributes = shuffled.take(2).toList();
+
     return Character(
       firstName: _pick(_firstNames),
       lastName: _pick(_lastNames),
+      attributes: attributes,
       parts: CharacterParts(
         body: body,
         head: _pick(
