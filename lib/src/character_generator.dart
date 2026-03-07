@@ -2,26 +2,56 @@ import 'dart:math';
 
 import 'package:flutter/services.dart';
 
-class CharacterParts {
-  final String body;
-  final String head;
-  final String face;
-  final String hair;
-  final String legs;
-  final String torso;
+import 'character.dart';
 
-  const CharacterParts({
-    required this.body,
-    required this.head,
-    required this.face,
-    required this.hair,
-    required this.legs,
-    required this.torso,
-  });
+const _firstNames = [
+  'Alex', 'Avery', 'Bailey', 'Blake', 'Blair', 'Brett', 'Briar', 'Brooklyn',
+  'Cameron', 'Casey', 'Charlie', 'Chase', 'Clay', 'Cole',
+  'Dakota', 'Dallas', 'Dana', 'Darcy', 'Devon', 'Drew', 'Dylan',
+  'Eden', 'Elliot', 'Ellis', 'Emerson', 'Emery', 'Evan',
+  'Finley', 'Flynn', 'Frankie',
+  'Gray', 'Greer',
+  'Harper', 'Harley', 'Hayden', 'Hunter',
+  'Indigo',
+  'Jace', 'Jamie', 'Jesse', 'Jordan', 'Jules', 'Juniper', 'Justice',
+  'Kai', 'Kendall', 'Kennedy', 'Kerry', 'Kieran',
+  'Lake', 'Lane', 'Laurie', 'Lee', 'Lennon', 'Logan', 'Luca', 'Lynn',
+  'Marlowe', 'Mason', 'Maxine', 'Merritt', 'Mickey', 'Milan', 'Morgan',
+  'Murphy',
+  'Nash', 'Nico', 'Noel', 'Nova',
+  'Oakley',
+  'Parker', 'Payton', 'Phoenix', 'Pierce', 'Piper',
+  'Quinn',
+  'Reese', 'Remy', 'Riley', 'River', 'Robin', 'Rowan',
+  'Sage', 'Sam', 'Scout', 'Shawn', 'Shiloh', 'Sidney', 'Skyler', 'Sloane',
+  'Spencer', 'Sterling', 'Stevie', 'Story', 'Sutton',
+  'Tatum', 'Taylor', 'Tegan',
+  'Wren',
+  'Zion',
+];
 
-  /// Ordered bottom-to-top for rendering layers.
-  List<String> get layerPaths => [body, head, legs, torso, face, hair];
-}
+const _lastNames = [
+  'Abbott', 'Acosta', 'Adler', 'Aldridge', 'Allison', 'Archer', 'Ashford',
+  'Atwood',
+  'Banks', 'Barlow', 'Barrett', 'Beckett', 'Bell', 'Bennett', 'Bishop',
+  'Blackwood', 'Blake', 'Bloom', 'Bolton', 'Booker', 'Briggs', 'Brooks',
+  'Buchanan', 'Burke', 'Burns',
+  'Calloway', 'Canton', 'Carver', 'Castle', 'Chase', 'Clayton', 'Clifton',
+  'Cole', 'Collins', 'Conrad', 'Conway', 'Crane', 'Cross',
+  'Dalton', 'Davenport', 'Drake', 'Duffy', 'Duncan', 'Dunne',
+  'Easton', 'Ellis', 'Emerson', 'Everett',
+  'Fairbanks', 'Finch', 'Fisher', 'Fletcher', 'Flynn', 'Foster', 'Fox',
+  'Garrett', 'Gibbs', 'Gilmore', 'Grant', 'Graves', 'Greene', 'Griffin',
+  'Hale', 'Hammond', 'Harlow', 'Hart', 'Hawkins', 'Hayes', 'Holloway',
+  'Holmes', 'Hudson', 'Hunt', 'Huxley',
+  'Ingram', 'Irons',
+  'Kane', 'Keating', 'Kelley', 'Kent', 'Kimball', 'Kingsley', 'Knox',
+  'Langley', 'Lawson', 'Leighton', 'Lennox', 'Lowe',
+  'Marsh', 'Mercer', 'Monroe', 'Moss',
+  'Nash', 'Nolan', 'Norris',
+  'Oakes',
+  'Parrish', 'Pearce', 'Pendleton', 'Perry', 'Pierce',
+];
 
 class CharacterGenerator {
   static final _random = Random();
@@ -81,7 +111,7 @@ class CharacterGenerator {
     return rest.substring(rest.indexOf('_') + 1);
   }
 
-  static Future<CharacterParts> generate() async {
+  static Future<Character> generate() async {
     final assets = await _getAssets();
     final gender = _random.nextBool() ? 'male_' : 'female_';
 
@@ -98,13 +128,21 @@ class CharacterGenerator {
         .where((p) => _faceColor(p, gender) == color)
         .toList();
 
-    return CharacterParts(
-      body: body,
-      head: _pick(heads.isNotEmpty ? heads : _filterGender(assets['heads']!, gender)),
-      face: _pick(faces.isNotEmpty ? faces : _filterGender(assets['faces']!, gender)),
-      hair: _pick(assets['hair']!),
-      legs: _pick(assets['legs']!),
-      torso: _pick(_filterGender(assets['torso']!, gender)),
+    return Character(
+      firstName: _pick(_firstNames),
+      lastName: _pick(_lastNames),
+      parts: CharacterParts(
+        body: body,
+        head: _pick(
+          heads.isNotEmpty ? heads : _filterGender(assets['heads']!, gender),
+        ),
+        face: _pick(
+          faces.isNotEmpty ? faces : _filterGender(assets['faces']!, gender),
+        ),
+        hair: _pick(assets['hair']!),
+        legs: _pick(assets['legs']!),
+        torso: _pick(_filterGender(assets['torso']!, gender)),
+      ),
     );
   }
 }

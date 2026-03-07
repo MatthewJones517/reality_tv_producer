@@ -1,6 +1,8 @@
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
+import 'package:flutter/painting.dart';
 
+import 'character.dart';
 import 'character_generator.dart';
 import 'game.dart';
 
@@ -12,14 +14,16 @@ class CharacterSprite extends PositionComponent
   static const _stepTime = 0.35;
   static const _displayScale = 4.0;
 
+  late final Character character;
+
   @override
   Future<void> onLoad() async {
-    final parts = await CharacterGenerator.generate();
+    character = await CharacterGenerator.generate();
     final displaySize = Vector2.all(_frameSize * _displayScale);
     size = displaySize;
     anchor = Anchor.center;
 
-    for (final path in parts.layerPaths) {
+    for (final path in character.parts.layerPaths) {
       final image = await game.images.load(path);
       final sheet = SpriteSheet(
         image: image,
@@ -35,5 +39,19 @@ class CharacterSprite extends PositionComponent
         size: displaySize,
       ));
     }
+
+    add(
+      TextComponent(
+        text: character.fullName,
+        anchor: Anchor.topCenter,
+        position: Vector2(displaySize.x / 2, displaySize.y + 4),
+        textRenderer: TextPaint(
+          style: const TextStyle(
+            fontSize: 20,
+            color: Color(0xFFFFFFFF),
+          ),
+        ),
+      ),
+    );
   }
 }
