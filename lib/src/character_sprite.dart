@@ -1,7 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 import 'package:flutter/painting.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'character.dart';
 import 'character_generator.dart';
@@ -42,10 +41,18 @@ class CharacterSprite extends PositionComponent
     }
 
     final nameRenderer = TextPaint(
-      style: GoogleFonts.vt323(fontSize: 24, color: const Color(0xFFFFFFFF)),
+      style: const TextStyle(
+        fontFamily: 'VT323',
+        fontSize: 24,
+        color: Color(0xFFFFFFFF),
+      ),
     );
     final attrRenderer = TextPaint(
-      style: GoogleFonts.vt323(fontSize: 18, color: const Color(0xFFBBBBBB)),
+      style: const TextStyle(
+        fontFamily: 'VT323',
+        fontSize: 18,
+        color: Color(0xFFBBBBBB),
+      ),
     );
 
     add(TextComponent(
@@ -63,7 +70,11 @@ class CharacterSprite extends PositionComponent
     ));
 
     final factRenderer = TextPaint(
-      style: GoogleFonts.vt323(fontSize: 16, color: const Color(0xFF999999)),
+      style: const TextStyle(
+        fontFamily: 'VT323',
+        fontSize: 16,
+        color: Color(0xFF999999),
+      ),
     );
 
     add(TextComponent(

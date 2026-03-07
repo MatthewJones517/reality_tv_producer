@@ -68,3 +68,14 @@ flutter:
     - assets/characters/hair/
     - assets/characters/legs/
     - assets/characters/torso/
+    - assets/title_screen/
+
+  fonts:
+    - family: CinzelDecorative
+      fonts:
+        - asset: assets/fonts/CinzelDecorative-Regular.ttf
+        - asset: assets/fonts/CinzelDecorative-Bold.ttf
+          weight: 700
+    - family: VT323
+      fonts:
+        - asset: assets/fonts/VT323-Regular.ttf

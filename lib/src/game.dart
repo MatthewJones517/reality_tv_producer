@@ -1,39 +1,35 @@
 import 'dart:ui';
 
+import 'package:flame/camera.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-import 'character_sprite.dart';
+import 'title_screen.dart';
 
 class RealityTvGame extends FlameGame with KeyboardEvents {
-  CharacterSprite? _character;
-  bool _spawning = false;
+  static const _width = 1920.0;
+  static const _height = 1080.0;
+
+  RealityTvGame()
+      : super(
+          camera: CameraComponent.withFixedResolution(
+            width: _width,
+            height: _height,
+          ),
+        );
+
+  bool _onTitleScreen = true;
 
   @override
-  Color backgroundColor() => const Color(0xFF2D2D2D);
+  Color backgroundColor() => const Color(0xFF000000);
 
   @override
   Future<void> onLoad() async {
     images.prefix = '';
-    GoogleFonts.vt323();
-    await GoogleFonts.pendingFonts;
-    await _spawnCharacter();
-  }
-
-  Future<void> _spawnCharacter() async {
-    if (_spawning) return;
-    _spawning = true;
-    try {
-      _character?.removeFromParent();
-      _character = CharacterSprite();
-      await add(_character!);
-      _character!.position = size / 2;
-    } finally {
-      _spawning = false;
-    }
+    camera.moveTo(Vector2(_width / 2, _height / 2));
+    world.add(TitleScreen());
   }
 
   @override
@@ -42,7 +38,10 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     Set<LogicalKeyboardKey> keysPressed,
   ) {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
-      _spawnCharacter();
+      if (_onTitleScreen) {
+        _onTitleScreen = false;
+        world.removeAll(world.children);
+      }
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
