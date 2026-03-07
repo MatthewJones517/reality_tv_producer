@@ -5,6 +5,18 @@ import 'package:flutter/painting.dart';
 
 import 'game.dart';
 
+class _DarkPanel extends PositionComponent {
+  _DarkPanel({required super.position, required super.size, required super.anchor});
+
+  @override
+  void render(ui.Canvas canvas) {
+    canvas.drawRRect(
+      ui.RRect.fromRectAndRadius(size.toRect(), const ui.Radius.circular(24)),
+      ui.Paint()..color = const Color(0xCC000000),
+    );
+  }
+}
+
 class TitleScreen extends PositionComponent
     with HasGameReference<RealityTvGame> {
   @override
@@ -17,22 +29,32 @@ class TitleScreen extends PositionComponent
       size: Vector2(1920, 1080),
     ));
 
+    add(_DarkPanel(
+      position: Vector2(960, 540),
+      size: Vector2(1400, 500),
+      anchor: Anchor.center,
+    ));
+
     _addOutlinedText(
-      text: 'Reality TV Producer',
-      position: Vector2(960, 800),
+      text: 'Reality TV\nProducer',
+      position: Vector2(960, 480),
       style: const TextStyle(
         fontFamily: 'CinzelDecorative',
         fontSize: 120,
         fontWeight: FontWeight.bold,
       ),
-      strokeWidth: 10,
+      fillColor: const Color(0xFFFF1493),
+      strokeColor: const Color(0xFF1A0010),
+      strokeWidth: 8,
     );
 
     _addOutlinedText(
       text: 'Press Space to Start',
-      position: Vector2(960, 900),
+      position: Vector2(960, 700),
       style: const TextStyle(fontFamily: 'VT323', fontSize: 80),
-      strokeWidth: 6,
+      fillColor: const Color(0xFFFFFFFF),
+      strokeColor: const Color(0xFF1A0010),
+      strokeWidth: 5,
     );
   }
 
@@ -40,12 +62,14 @@ class TitleScreen extends PositionComponent
     required String text,
     required Vector2 position,
     required TextStyle style,
+    required Color fillColor,
+    required Color strokeColor,
     required double strokeWidth,
   }) {
     final strokePaint = ui.Paint()
       ..style = ui.PaintingStyle.stroke
       ..strokeWidth = strokeWidth
-      ..color = const Color(0xFFFFFFFF);
+      ..color = strokeColor;
 
     add(TextComponent(
       text: text,
@@ -61,7 +85,7 @@ class TitleScreen extends PositionComponent
       position: position,
       anchor: Anchor.center,
       textRenderer: TextPaint(
-        style: style.copyWith(color: const Color(0xFFFF1493)),
+        style: style.copyWith(color: fillColor),
       ),
     ));
   }
