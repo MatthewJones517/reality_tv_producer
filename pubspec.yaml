@@ -63,6 +63,7 @@ flutter:
   assets:
     - assets/characters/body/
     - assets/characters/faces/
+    - assets/characters/heads/
     - assets/characters/hair/
     - assets/characters/legs/
     - assets/characters/torso/
