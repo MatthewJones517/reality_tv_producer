@@ -114,18 +114,20 @@ class CastScreen extends PositionComponent
       final factRenderer = TextPaint(
         style: const TextStyle(
           fontFamily: 'VT323',
-          fontSize: 28,
+          fontSize: 32,
           color: Color(0xFFBBBBBB),
         ),
       );
 
-      final factText = _wrapText('"${character.funFact}"', 20);
-      container.add(TextComponent(
-        text: factText,
-        anchor: Anchor.topCenter,
-        position: Vector2(0, displaySize.y + 90),
-        textRenderer: factRenderer,
-      ));
+      final factLines = _wrapText('"${character.funFact}"', 18).split('\n');
+      for (int l = 0; l < factLines.length; l++) {
+        container.add(TextComponent(
+          text: factLines[l],
+          anchor: Anchor.topCenter,
+          position: Vector2(0, displaySize.y + 104 + (l * 34)),
+          textRenderer: factRenderer,
+        ));
+      }
 
       add(container);
     }
