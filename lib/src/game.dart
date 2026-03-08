@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flame/camera.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -13,12 +11,12 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   static const _height = 1080.0;
 
   RealityTvGame()
-      : super(
-          camera: CameraComponent.withFixedResolution(
-            width: _width,
-            height: _height,
-          ),
-        );
+    : super(
+        camera: CameraComponent.withFixedResolution(
+          width: _width,
+          height: _height,
+        ),
+      );
 
   bool _onTitleScreen = true;
   String? showName;
@@ -50,8 +48,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     KeyEvent event,
     Set<LogicalKeyboardKey> keysPressed,
   ) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.space) {
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
       if (_onTitleScreen) {
         _onTitleScreen = false;
         overlays.add('showName');

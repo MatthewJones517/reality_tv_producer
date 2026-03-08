@@ -50,7 +50,7 @@ class HowToPlayScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Get your show renewed for 5 seasons\nto reach syndication!',
+                    'Get your show renewed for 5 seasons and reach syndication!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: _fontFamily,
