@@ -1,16 +1,23 @@
+import 'dart:ui';
+
 import 'package:flame/camera.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'cast_screen.dart';
 import 'title_screen.dart';
+
+enum GameScene { title, showName, howToPlay, cast, playing }
 
 class RealityTvGame extends FlameGame with KeyboardEvents {
   static const _width = 1920.0;
   static const _height = 1080.0;
 
-  RealityTvGame()
+  final FocusNode gameFocusNode;
+
+  RealityTvGame({required this.gameFocusNode})
     : super(
         camera: CameraComponent.withFixedResolution(
           width: _width,
@@ -18,8 +25,9 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
         ),
       );
 
-  bool _onTitleScreen = true;
+  GameScene _scene = GameScene.title;
   String? showName;
+  CastScreen? _castScreen;
 
   @override
   Color backgroundColor() => const Color(0xFF000000);
@@ -34,13 +42,22 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   void submitShowName(String name) {
     showName = name;
     overlays.remove('showName');
+    _scene = GameScene.howToPlay;
     overlays.add('howToPlay');
   }
 
   void finishHowToPlay() {
     overlays.remove('howToPlay');
-    world.removeAll(world.children);
-    // TODO: proceed to character selection
+    _scene = GameScene.cast;
+    world.children.whereType<TitleScreen>().forEach((c) => c.removeFromParent());
+    _showCastScreen();
+    gameFocusNode.requestFocus();
+  }
+
+  void _showCastScreen() {
+    _castScreen?.removeFromParent();
+    _castScreen = CastScreen();
+    world.add(_castScreen!);
   }
 
   @override
@@ -49,10 +66,18 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     Set<LogicalKeyboardKey> keysPressed,
   ) {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
-      if (_onTitleScreen) {
-        _onTitleScreen = false;
-        overlays.add('showName');
-        return KeyEventResult.handled;
+      switch (_scene) {
+        case GameScene.title:
+          _scene = GameScene.showName;
+          overlays.add('showName');
+          return KeyEventResult.handled;
+        case GameScene.cast:
+          _scene = GameScene.playing;
+          _castScreen?.removeFromParent();
+          _castScreen = null;
+          return KeyEventResult.handled;
+        default:
+          break;
       }
     }
     return KeyEventResult.ignored;
