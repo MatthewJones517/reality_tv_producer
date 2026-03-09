@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flame/camera.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -7,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'cast_screen.dart';
+import 'character.dart';
+import 'play_screen.dart';
 import 'title_screen.dart';
 
 enum GameScene { title, showName, howToPlay, cast, playing }
@@ -28,6 +28,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   GameScene _scene = GameScene.title;
   String? showName;
   CastScreen? _castScreen;
+  List<Character> _currentCast = [];
 
   @override
   Color backgroundColor() => const Color(0xFF000000);
@@ -49,7 +50,9 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   void finishHowToPlay() {
     overlays.remove('howToPlay');
     _scene = GameScene.cast;
-    world.children.whereType<TitleScreen>().forEach((c) => c.removeFromParent());
+    world.children.whereType<TitleScreen>().forEach(
+      (c) => c.removeFromParent(),
+    );
     _showCastScreen();
     gameFocusNode.requestFocus();
   }
@@ -73,8 +76,10 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
           return KeyEventResult.handled;
         case GameScene.cast:
           _scene = GameScene.playing;
+          _currentCast = List.of(_castScreen!.cast);
           _castScreen?.removeFromParent();
           _castScreen = null;
+          world.add(PlayScreen(cast: _currentCast));
           return KeyEventResult.handled;
         default:
           break;
