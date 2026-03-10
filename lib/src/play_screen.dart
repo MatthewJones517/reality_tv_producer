@@ -147,7 +147,7 @@ class PlayScreen extends PositionComponent
 
     add(_CoinCounterDisplay(
       coinPusher: coinPusher,
-      position: Vector2(1700, 1080 - _bottomBarHeight / 2),
+      position: Vector2(1520, 1080 - _bottomBarHeight / 2),
     ));
 
     add(_ShowInfoDisplay(
