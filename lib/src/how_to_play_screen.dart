@@ -59,22 +59,28 @@ class HowToPlayScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  _buildInfoLine(
+                    Icons.mouse_rounded,
+                    Colors.lightBlueAccent,
+                    'Right / left click to fire.',
+                  ),
+                  const SizedBox(height: 24),
                   _buildTokenRow(
                     'assets/playfield/Drama_Chip.png',
                     64,
                     'Push drama tokens to increase ratings.',
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   _buildTokenRow(
                     'assets/playfield/coin.png',
                     38,
-                    'Push coin tokens to buy perks\nand additional tokens.',
+                    'Push coin tokens to buy stuff.',
                   ),
                   const SizedBox(height: 24),
                   _buildInfoLine(
                     Icons.warning_amber_rounded,
                     Colors.orangeAccent,
-                    "Don't let your ratings slip!\nIf they drop too low you risk cancellation!",
+                    "If your ratings slip, you'll get cancelled!",
                   ),
                   const SizedBox(height: 28),
                   Text(

@@ -145,18 +145,15 @@ class PlayScreen extends PositionComponent
     game.activePusher = coinPusher;
     add(coinPusher);
 
-    final statusText = 'S1E1: ${game.showName ?? ''}';
-    add(TextComponent(
-      text: statusText,
+    add(_CoinCounterDisplay(
+      coinPusher: coinPusher,
+      position: Vector2(1700, 1080 - _bottomBarHeight / 2),
+    ));
+
+    add(_ShowInfoDisplay(
+      game: game,
+      coinPusher: coinPusher,
       position: Vector2(1900, 1080 - _bottomBarHeight / 2),
-      anchor: Anchor.centerRight,
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          fontFamily: 'VT323',
-          fontSize: 36,
-          color: Color(0xFFFFFFFF),
-        ),
-      ),
     ));
 
     add(_TokenQueueDisplay(
@@ -207,6 +204,111 @@ class _BorderLine extends PositionComponent {
   @override
   void render(ui.Canvas canvas) {
     canvas.drawRect(size.toRect(), ui.Paint()..color = color);
+  }
+}
+
+class _CoinCounterDisplay extends PositionComponent {
+  static const _iconSize = 40.0;
+  static const _gap = 12.0;
+
+  final CoinPusher coinPusher;
+  final _textPaint = TextPaint(
+    style: const TextStyle(
+      fontFamily: 'VT323',
+      fontSize: 36,
+      color: Color(0xFFFFFFFF),
+    ),
+  );
+
+  _CoinCounterDisplay({
+    required this.coinPusher,
+    required super.position,
+  }) {
+    anchor = Anchor.centerRight;
+  }
+
+  @override
+  void render(ui.Canvas canvas) {
+    final coinImg = coinPusher.coinImage;
+    if (coinImg == null) return;
+
+    final countStr = '${coinPusher.coinsCollected}';
+    final countWidth = _textPaint.toTextPainter(countStr).width;
+    final countRight = 0.0;
+    final coinRight = -countWidth - _gap;
+
+    final paint = ui.Paint()..filterQuality = ui.FilterQuality.low;
+
+    canvas.drawImageRect(
+      coinImg,
+      ui.Rect.fromLTWH(0, 0, coinImg.width.toDouble(), coinImg.height.toDouble()),
+      ui.Rect.fromCenter(
+        center: ui.Offset(coinRight - _iconSize / 2, 0),
+        width: _iconSize,
+        height: _iconSize,
+      ),
+      paint,
+    );
+
+    _textPaint.render(
+      canvas,
+      countStr,
+      Vector2(countRight, 0),
+      anchor: Anchor.centerRight,
+    );
+  }
+}
+
+class _ShowInfoDisplay extends PositionComponent {
+  static const _iconSize = 40.0;
+  static const _gap = 8.0;
+
+  final RealityTvGame game;
+  final CoinPusher coinPusher;
+  final _textPaint = TextPaint(
+    style: const TextStyle(
+      fontFamily: 'VT323',
+      fontSize: 36,
+      color: Color(0xFFFFFFFF),
+    ),
+  );
+
+  _ShowInfoDisplay({
+    required this.game,
+    required this.coinPusher,
+    required super.position,
+  }) {
+    anchor = Anchor.centerRight;
+  }
+
+  @override
+  void render(ui.Canvas canvas) {
+    final tvImg = coinPusher.tvImage;
+    final text = 'S1E1: ${game.showName ?? ''}';
+    final textWidth = _textPaint.toTextPainter(text).width;
+
+    final textRight = 0.0;
+    final tvRight = -textWidth - _gap;
+
+    if (tvImg != null) {
+      canvas.drawImageRect(
+        tvImg,
+        ui.Rect.fromLTWH(0, 0, tvImg.width.toDouble(), tvImg.height.toDouble()),
+        ui.Rect.fromCenter(
+          center: ui.Offset(tvRight - _iconSize / 2, 0),
+          width: _iconSize,
+          height: _iconSize,
+        ),
+        ui.Paint()..filterQuality = ui.FilterQuality.low,
+      );
+    }
+
+    _textPaint.render(
+      canvas,
+      text,
+      Vector2(textRight, 0),
+      anchor: Anchor.centerRight,
+    );
   }
 }
 

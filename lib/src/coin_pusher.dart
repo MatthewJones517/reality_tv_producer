@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
+import 'package:flame/sprite.dart';
 import 'package:forge2d/forge2d.dart' as f2d;
 
 import 'game.dart';
@@ -37,13 +38,18 @@ class CoinPusher extends PositionComponent
   final List<TokenBody> _tokens = [];
   PusherBody? _pusher;
   ui.Image? _launcherImage;
+  ui.Image? _edgeImage;
+  ui.Image? _smokeImage;
+  double _edgeWidth = 0;
   ui.Image? coinImage;
   ui.Image? dramaImage;
+  ui.Image? tvImage;
 
   static const _fireCooldown = 0.5;
 
   final List<TokenBody> _pendingRemoval = [];
   final List<TokenType> tokenQueue = [];
+  int coinsCollected = 0;
   double _rotTime = 0;
   double _topCooldown = 0;
   double _bottomCooldown = 0;
@@ -64,8 +70,15 @@ class CoinPusher extends PositionComponent
   @override
   Future<void> onLoad() async {
     _launcherImage = await game.images.load('assets/playfield/launcher.png');
+    _edgeImage = await game.images.load('assets/playfield/edge.png');
+    if (_edgeImage != null) {
+      final img = _edgeImage!;
+      _edgeWidth = fieldHeight * (img.width / img.height);
+    }
     coinImage = await game.images.load('assets/playfield/coin.png');
     dramaImage = await game.images.load('assets/playfield/Drama_Chip.png');
+    _smokeImage = await game.images.load('assets/playfield/smoke.png');
+    tvImage = await game.images.load('assets/playfield/tv_no_antenna.png');
     final pusherImage = await game.images.load('assets/playfield/pusher.png');
 
     _fillQueue();
@@ -97,11 +110,13 @@ class CoinPusher extends PositionComponent
 
   void _createDropZone() {
     final h = fieldHeight * _scale;
-    final x = fieldWidth * _scale;
+    final dropX = _edgeWidth > 0
+        ? (fieldWidth - _edgeWidth / 2) * _scale
+        : fieldWidth * _scale;
 
     final bodyDef = f2d.BodyDef(type: f2d.BodyType.static);
     final body = _world.createBody(bodyDef);
-    final shape = f2d.EdgeShape()..set(f2d.Vector2(x, 0), f2d.Vector2(x, h));
+    final shape = f2d.EdgeShape()..set(f2d.Vector2(dropX, 0), f2d.Vector2(dropX, h));
     final fixtureDef = f2d.FixtureDef(shape)..isSensor = true;
     body.createFixture(fixtureDef);
     body.userData = 'dropZone';
@@ -181,6 +196,31 @@ class CoinPusher extends PositionComponent
     }
   }
 
+  void _spawnSmoke(Vector2 position, double tokenSize) {
+    final img = _smokeImage;
+    if (img == null) return;
+
+    final sheet = SpriteSheet(
+      image: img,
+      srcSize: Vector2(32, 32),
+    );
+    final animation = sheet.createAnimation(
+      row: 0,
+      stepTime: 0.05,
+      loop: false,
+      from: 0,
+      to: 7,
+    );
+
+    add(SpriteAnimationComponent(
+      animation: animation,
+      size: Vector2.all(tokenSize),
+      position: position,
+      anchor: Anchor.center,
+      removeOnFinish: true,
+    ));
+  }
+
   bool get _launcherBlocked {
     if (_pusher == null) return true;
     final pusherRightEdge =
@@ -253,6 +293,8 @@ class CoinPusher extends PositionComponent
     _world.stepDt(dt);
 
     for (final token in _pendingRemoval) {
+      if (token.type == TokenType.coin) coinsCollected++;
+      _spawnSmoke(token.position, token.size.x);
       _world.destroyBody(token.body);
       _tokens.remove(token);
       token.removeFromParent();
@@ -260,16 +302,32 @@ class CoinPusher extends PositionComponent
     _pendingRemoval.clear();
   }
 
+  static const _bgColor = 0xFF696a6a;
+
   @override
   void render(ui.Canvas canvas) {
     canvas.clipRect(size.toRect());
+    canvas.drawRect(size.toRect(), ui.Paint()..color = const ui.Color(_bgColor));
     super.render(canvas);
+    _renderEdge(canvas);
     final blocked = _launcherBlocked;
     _renderLauncher(canvas, _topLauncherY, _topAngle(), disabled: blocked);
     _renderLauncher(canvas, _bottomLauncherY, _bottomAngle(), disabled: blocked);
   }
 
   static const _launcherDrawSize = 160.0;
+
+  void _renderEdge(ui.Canvas canvas) {
+    final img = _edgeImage;
+    if (img == null || _edgeWidth <= 0) return;
+
+    final x = fieldWidth - _edgeWidth;
+    final srcRect = ui.Rect.fromLTWH(
+        0, 0, img.width.toDouble(), img.height.toDouble());
+    final dstRect = ui.Rect.fromLTWH(x, 0, _edgeWidth, fieldHeight);
+    canvas.drawImageRect(
+        img, srcRect, dstRect, ui.Paint()..filterQuality = ui.FilterQuality.low);
+  }
 
   void _renderLauncher(
     ui.Canvas canvas,
