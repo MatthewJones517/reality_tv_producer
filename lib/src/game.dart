@@ -12,8 +12,7 @@ import 'title_screen.dart';
 
 enum GameScene { title, showName, howToPlay, cast, playing }
 
-class RealityTvGame extends FlameGame
-    with KeyboardEvents, MultiTouchTapDetector, SecondaryTapDetector {
+class RealityTvGame extends FlameGame with KeyboardEvents {
   static const _width = 1920.0;
   static const _height = 1080.0;
 
@@ -66,17 +65,15 @@ class RealityTvGame extends FlameGame
     world.add(_castScreen!);
   }
 
-  @override
-  void onTapDown(int pointerId, TapDownInfo info) {
-    if (_scene == GameScene.playing) {
-      activePusher?.shootTop();
-    }
-  }
-
-  @override
-  void onSecondaryTapDown(TapDownInfo info) {
-    if (_scene == GameScene.playing) {
-      activePusher?.shootBottom();
+  void handleShootClick(int buttons) {
+    if (_scene != GameScene.playing || activePusher == null) return;
+    switch (buttons) {
+      case 1: // kPrimaryButton - left click
+        activePusher!.shootTop();
+        break;
+      case 2: // kSecondaryButton - right click
+        activePusher!.shootBottom();
+        break;
     }
   }
 

@@ -11,15 +11,20 @@ void main() {
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     home: Scaffold(
-      body: GameWidget(
-        game: game,
-        focusNode: gameFocusNode,
-        overlayBuilderMap: {
-          'showName': (context, game) =>
-              ShowNameScreen(game: game as RealityTvGame),
-          'howToPlay': (context, game) =>
-              HowToPlayScreen(game: game as RealityTvGame),
+      body: Listener(
+        onPointerDown: (event) {
+          game.handleShootClick(event.buttons);
         },
+        child: GameWidget(
+          game: game,
+          focusNode: gameFocusNode,
+          overlayBuilderMap: {
+            'showName': (context, game) =>
+                ShowNameScreen(game: game as RealityTvGame),
+            'howToPlay': (context, game) =>
+                HowToPlayScreen(game: game as RealityTvGame),
+          },
+        ),
       ),
     ),
   ));
