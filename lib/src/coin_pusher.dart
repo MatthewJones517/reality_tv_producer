@@ -1,0 +1,322 @@
+import 'dart:math';
+import 'dart:ui' as ui;
+
+import 'package:flame/components.dart';
+import 'package:forge2d/forge2d.dart' as f2d;
+
+import 'game.dart';
+import 'pusher_body.dart';
+import 'token_body.dart';
+
+class CoinPusher extends PositionComponent
+    with HasGameReference<RealityTvGame> {
+  static const _scale = 0.01;
+
+  static const fieldWidth = 1920.0;
+  static const fieldHeight = 854.0;
+
+  static const _tokenCount = 550;
+  static const _dramaRatio = 0.10;
+  static const _pushDistance = 350.0;
+  static const _pushSpeedPx = 120.0;
+  static const _pusherStartX = 0.0;
+
+  static const _launcherX = _pushDistance * 2 / 3;
+  static const _topLauncherY = 50.0;
+  static const _bottomLauncherY = fieldHeight - 50.0;
+  static const _shootSpeed = 800.0;
+  static const _launcherRadius = 24.0;
+  static const _pusherHalfW = 8.0;
+  static const _arcHalf = pi / 8;
+  static const _rotSpeed = 2.0;
+
+  static const queueSize = 6;
+
+  late final f2d.World _world;
+  final _random = Random();
+  final List<TokenBody> _tokens = [];
+  PusherBody? _pusher;
+  ui.Image? _launcherImage;
+  ui.Image? coinImage;
+  ui.Image? dramaImage;
+
+  static const _fireCooldown = 0.5;
+
+  final List<TokenBody> _pendingRemoval = [];
+  final List<TokenType> tokenQueue = [];
+  double _rotTime = 0;
+  double _topCooldown = 0;
+  double _bottomCooldown = 0;
+
+  CoinPusher() {
+    size = Vector2(fieldWidth, fieldHeight);
+  }
+
+  TokenType _randomTokenType() =>
+      _random.nextDouble() < 0.90 ? TokenType.coin : TokenType.drama;
+
+  void _fillQueue() {
+    while (tokenQueue.length < queueSize) {
+      tokenQueue.insert(0, _randomTokenType());
+    }
+  }
+
+  @override
+  Future<void> onLoad() async {
+    _launcherImage = await game.images.load('assets/playfield/launcher.png');
+    coinImage = await game.images.load('assets/playfield/coin.png');
+    dramaImage = await game.images.load('assets/playfield/Drama_Chip.png');
+    final pusherImage = await game.images.load('assets/playfield/pusher.png');
+
+    _fillQueue();
+
+    _world = f2d.World(f2d.Vector2.zero());
+    _world.setContactListener(_ContactListener(this));
+
+    _createWalls();
+    _createDropZone();
+    await _createPusher(pusherImage);
+    await _spawnTokens();
+  }
+
+  void _createWalls() {
+    final w = fieldWidth * _scale;
+    final h = fieldHeight * _scale;
+
+    _createEdge(f2d.Vector2(0, 0), f2d.Vector2(w, 0));
+    _createEdge(f2d.Vector2(0, h), f2d.Vector2(w, h));
+    _createEdge(f2d.Vector2(0, 0), f2d.Vector2(0, h));
+  }
+
+  void _createEdge(f2d.Vector2 v1, f2d.Vector2 v2) {
+    final bodyDef = f2d.BodyDef(type: f2d.BodyType.static);
+    final body = _world.createBody(bodyDef);
+    final shape = f2d.EdgeShape()..set(v1, v2);
+    body.createFixture(f2d.FixtureDef(shape, friction: 0.3));
+  }
+
+  void _createDropZone() {
+    final h = fieldHeight * _scale;
+    final x = fieldWidth * _scale;
+
+    final bodyDef = f2d.BodyDef(type: f2d.BodyType.static);
+    final body = _world.createBody(bodyDef);
+    final shape = f2d.EdgeShape()..set(f2d.Vector2(x, 0), f2d.Vector2(x, h));
+    final fixtureDef = f2d.FixtureDef(shape)..isSensor = true;
+    body.createFixture(fixtureDef);
+    body.userData = 'dropZone';
+  }
+
+  Future<void> _createPusher(ui.Image pusherImage) async {
+    final halfW = 8.0 * _scale;
+    final halfH = (fieldHeight / 2) * _scale;
+    final centerY = halfH;
+    final startPhysX = _pusherStartX * _scale + halfW;
+
+    final bodyDef = f2d.BodyDef(
+      type: f2d.BodyType.kinematic,
+      position: f2d.Vector2(startPhysX, centerY),
+    );
+    final body = _world.createBody(bodyDef);
+    final shape = f2d.PolygonShape()..setAsBoxXY(halfW, halfH);
+    body.createFixture(f2d.FixtureDef(shape, friction: 0.5));
+
+    _pusher = PusherBody(
+      body: body,
+      physScale: _scale,
+      fieldHeight: fieldHeight,
+      pushDistance: _pushDistance,
+      pushSpeed: _pushSpeedPx * _scale,
+      startX: _pusherStartX + 8,
+      image: pusherImage,
+    );
+    body.linearVelocity = f2d.Vector2(_pushSpeedPx * _scale, 0);
+    add(_pusher!);
+  }
+
+  Future<void> _spawnTokens() async {
+    final dramaCount = (_tokenCount * _dramaRatio).round();
+    final coinCount = _tokenCount - dramaCount;
+
+    for (int i = 0; i < _tokenCount; i++) {
+      final type = i < coinCount ? TokenType.coin : TokenType.drama;
+      final diameter = TokenBody.diameterFor(type);
+      final radius = (diameter / 2) * _scale;
+
+      final margin = diameter / 2 + 10;
+      final minX = 80.0 + margin;
+      final maxX = fieldWidth - margin;
+      final minY = margin;
+      final maxY = fieldHeight - margin;
+
+      final px = minX + _random.nextDouble() * (maxX - minX);
+      final py = minY + _random.nextDouble() * (maxY - minY);
+
+      final bodyDef = f2d.BodyDef(
+        type: f2d.BodyType.dynamic,
+        position: f2d.Vector2(px * _scale, py * _scale),
+        linearDamping: 2.0,
+        angularDamping: 1.0,
+      );
+      final body = _world.createBody(bodyDef);
+      final shape = f2d.CircleShape()..radius = radius;
+      body.createFixture(f2d.FixtureDef(
+        shape,
+        friction: 0.3,
+        restitution: 0.2,
+        density: 1.0,
+      ));
+
+      final token = TokenBody(type: type, body: body, physScale: _scale);
+      await token.loadSprite((path) => game.images.load(path));
+      _tokens.add(token);
+      add(token);
+    }
+  }
+
+  void onTokenHitDropZone(TokenBody token) {
+    if (!token.collected) {
+      token.collected = true;
+      _pendingRemoval.add(token);
+    }
+  }
+
+  bool get _launcherBlocked {
+    if (_pusher == null) return true;
+    final pusherRightEdge =
+        _pusher!.body.position.x / _scale + _pusherHalfW;
+    return pusherRightEdge >= _launcherX - _launcherRadius;
+  }
+
+  double get _oscillation => sin(_rotTime * _rotSpeed);
+
+  double _topAngle() => pi / 2 + _oscillation * _arcHalf;
+  double _bottomAngle() => -pi / 2 + _oscillation * _arcHalf;
+
+  void shootTop() {
+    if (!_launcherBlocked && _topCooldown <= 0) {
+      _topCooldown = _fireCooldown;
+      _shootAt(_topLauncherY, _topAngle());
+    }
+  }
+
+  void shootBottom() {
+    if (!_launcherBlocked && _bottomCooldown <= 0) {
+      _bottomCooldown = _fireCooldown;
+      _shootAt(_bottomLauncherY, _bottomAngle());
+    }
+  }
+
+  Future<void> _shootAt(double originY, double angle) async {
+    if (tokenQueue.isEmpty) return;
+    final type = tokenQueue.removeLast();
+    _fillQueue();
+    final diameter = TokenBody.diameterFor(type);
+    final radius = (diameter / 2) * _scale;
+
+    final offset = _launcherRadius + diameter / 2 + 4;
+    final spawnX = _launcherX + cos(angle) * offset;
+    final spawnY = originY + sin(angle) * offset;
+
+    final bodyDef = f2d.BodyDef(
+      type: f2d.BodyType.dynamic,
+      position: f2d.Vector2(spawnX * _scale, spawnY * _scale),
+      linearDamping: 2.0,
+      angularDamping: 1.0,
+      bullet: true,
+    );
+    final body = _world.createBody(bodyDef);
+    final shape = f2d.CircleShape()..radius = radius;
+    body.createFixture(f2d.FixtureDef(
+      shape,
+      friction: 0.3,
+      restitution: 0.2,
+      density: 1.0,
+    ));
+
+    final vx = cos(angle) * _shootSpeed * _scale;
+    final vy = sin(angle) * _shootSpeed * _scale;
+    body.linearVelocity = f2d.Vector2(vx, vy);
+
+    final token = TokenBody(type: type, body: body, physScale: _scale);
+    await token.loadSprite((path) => game.images.load(path));
+    _tokens.add(token);
+    add(token);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _rotTime += dt;
+    if (_topCooldown > 0) _topCooldown -= dt;
+    if (_bottomCooldown > 0) _bottomCooldown -= dt;
+    _world.stepDt(dt);
+
+    for (final token in _pendingRemoval) {
+      _world.destroyBody(token.body);
+      _tokens.remove(token);
+      token.removeFromParent();
+    }
+    _pendingRemoval.clear();
+  }
+
+  @override
+  void render(ui.Canvas canvas) {
+    canvas.clipRect(size.toRect());
+    super.render(canvas);
+    final blocked = _launcherBlocked;
+    _renderLauncher(canvas, _topLauncherY, _topAngle(), disabled: blocked);
+    _renderLauncher(canvas, _bottomLauncherY, _bottomAngle(), disabled: blocked);
+  }
+
+  static const _launcherDrawSize = 160.0;
+
+  void _renderLauncher(
+    ui.Canvas canvas,
+    double y,
+    double angle, {
+    required bool disabled,
+  }) {
+    final img = _launcherImage;
+    if (img == null) return;
+
+    canvas.save();
+    canvas.translate(_launcherX, y);
+    canvas.rotate(angle);
+
+    final srcRect = ui.Rect.fromLTWH(
+        0, 0, img.width.toDouble(), img.height.toDouble());
+    final aspect = img.width / img.height;
+    final drawW = _launcherDrawSize;
+    final drawH = drawW / aspect;
+    final dstRect = ui.Rect.fromCenter(
+        center: ui.Offset.zero, width: drawW, height: drawH);
+
+    final paint = ui.Paint()..filterQuality = ui.FilterQuality.low;
+    if (disabled) {
+      paint.colorFilter = const ui.ColorFilter.mode(
+          ui.Color(0x88000000), ui.BlendMode.srcATop);
+    }
+
+    canvas.drawImageRect(img, srcRect, dstRect, paint);
+    canvas.restore();
+  }
+}
+
+class _ContactListener extends f2d.ContactListener {
+  final CoinPusher pusher;
+
+  _ContactListener(this.pusher);
+
+  @override
+  void beginContact(f2d.Contact contact) {
+    final a = contact.fixtureA.body.userData;
+    final b = contact.fixtureB.body.userData;
+
+    if (a == 'dropZone' && b is TokenBody) {
+      pusher.onTokenHitDropZone(b);
+    } else if (b == 'dropZone' && a is TokenBody) {
+      pusher.onTokenHitDropZone(a);
+    }
+  }
+}

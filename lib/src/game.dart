@@ -6,12 +6,14 @@ import 'package:flutter/widgets.dart';
 
 import 'cast_screen.dart';
 import 'character.dart';
+import 'coin_pusher.dart';
 import 'play_screen.dart';
 import 'title_screen.dart';
 
 enum GameScene { title, showName, howToPlay, cast, playing }
 
-class RealityTvGame extends FlameGame with KeyboardEvents {
+class RealityTvGame extends FlameGame
+    with KeyboardEvents, MultiTouchTapDetector, SecondaryTapDetector {
   static const _width = 1920.0;
   static const _height = 1080.0;
 
@@ -29,6 +31,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   String? showName;
   CastScreen? _castScreen;
   List<Character> _currentCast = [];
+  CoinPusher? activePusher;
 
   @override
   Color backgroundColor() => const Color(0xFF000000);
@@ -61,6 +64,20 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     _castScreen?.removeFromParent();
     _castScreen = CastScreen();
     world.add(_castScreen!);
+  }
+
+  @override
+  void onTapDown(int pointerId, TapDownInfo info) {
+    if (_scene == GameScene.playing) {
+      activePusher?.shootTop();
+    }
+  }
+
+  @override
+  void onSecondaryTapDown(TapDownInfo info) {
+    if (_scene == GameScene.playing) {
+      activePusher?.shootBottom();
+    }
   }
 
   @override

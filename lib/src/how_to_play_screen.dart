@@ -60,13 +60,13 @@ class HowToPlayScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   _buildTokenRow(
-                    'assets/tokens/Drama_Chip.png',
+                    'assets/playfield/Drama_Chip.png',
                     64,
                     'Push drama tokens to increase ratings.',
                   ),
                   const SizedBox(height: 16),
                   _buildTokenRow(
-                    'assets/tokens/coin.png',
+                    'assets/playfield/coin.png',
                     38,
                     'Push coin tokens to buy perks\nand additional tokens.',
                   ),
