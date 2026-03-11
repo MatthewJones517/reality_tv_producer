@@ -226,6 +226,7 @@ class CoinPusher extends PositionComponent
 
   bool get launcherBlocked {
     if (_pusher == null) return true;
+    if (!_pusher!.hasCompletedFirstPush) return true;
     final pusherRightEdge =
         _pusher!.body.position.x / _scale + _pusherHalfW;
     final outerLimit = _pusher!.startX + _pushDistance - _outerDisableMargin;
