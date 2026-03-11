@@ -175,8 +175,11 @@ class _HealthBarDisplay extends PositionComponent {
   static const _yellow = Color(0xFFEAB308);
   static const _red = Color(0xFFEF4444);
   static const _bgColor = Color(0xFF333333);
+  static const _blinkThreshold = 15;
+  static const _blinkCycle = 0.15;
 
   final CoinPusher coinPusher;
+  double _blinkTime = 0;
 
   _HealthBarDisplay({
     required this.coinPusher,
@@ -186,9 +189,21 @@ class _HealthBarDisplay extends PositionComponent {
   }
 
   Color _colorForHealth(double health) {
-    if (health >= 80) return _green;
-    if (health >= 35) return _yellow;
-    return _red;
+    if (health > _blinkThreshold) {
+      if (health >= 80) return _green;
+      if (health >= 35) return _yellow;
+      return _red;
+    }
+    final phase = (_blinkTime % _blinkCycle) / _blinkCycle;
+    if (phase < 1 / 3) return _red;
+    if (phase < 2 / 3) return _yellow;
+    return _green;
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (coinPusher.health <= _blinkThreshold) _blinkTime += dt;
   }
 
   @override
