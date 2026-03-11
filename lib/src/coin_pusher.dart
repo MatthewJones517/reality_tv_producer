@@ -16,7 +16,7 @@ class CoinPusher extends PositionComponent
   static const fieldWidth = 1920.0;
   static const fieldHeight = 854.0;
 
-  static const _tokenCount = 550;
+  static const _tokenCount = 400;
   static const _dramaRatio = 0.10;
   static const _pushDistance = 350.0;
   static const _pushSpeedPx = 120.0;
@@ -159,7 +159,8 @@ class CoinPusher extends PositionComponent
       final radius = (diameter / 2) * _scale;
 
       final margin = diameter / 2 + 10;
-      final minX = 80.0 + margin;
+      final pushZoneEnd = _pushDistance + _pusherHalfW * 4;
+      final minX = pushZoneEnd + margin;
       final maxX = fieldWidth - margin;
       final minY = margin;
       final maxY = fieldHeight - margin;
