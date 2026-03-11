@@ -1,15 +1,48 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'game.dart';
 
-class GameOverScreen extends StatelessWidget {
+class GameOverScreen extends StatefulWidget {
   final RealityTvGame game;
 
   const GameOverScreen({super.key, required this.game});
 
+  @override
+  State<GameOverScreen> createState() => _GameOverScreenState();
+}
+
+class _GameOverScreenState extends State<GameOverScreen> {
   static const _pink = Color(0xFFFF1493);
   static const _fontFamily = 'VT323';
+  static const _spaceDelaySeconds = 5;
+
+  bool _spaceEnabled = false;
+  int _remainingSeconds = _spaceDelaySeconds;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        _remainingSeconds--;
+        if (_remainingSeconds <= 0) {
+          _countdownTimer?.cancel();
+          _spaceEnabled = true;
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
 
   static String _ordinalWord(int n) {
     return switch (n) {
@@ -30,9 +63,10 @@ class GameOverScreen extends StatelessWidget {
         focusNode: FocusNode()..requestFocus(),
         autofocus: true,
         onKeyEvent: (event) {
+          if (!_spaceEnabled) return;
           if (event is KeyDownEvent &&
               event.logicalKey == LogicalKeyboardKey.space) {
-            game.resetToTitle();
+            widget.game.resetToTitle();
           }
         },
         child: Center(
@@ -61,8 +95,8 @@ class GameOverScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  '${game.showName ?? "Your show"} was canceled during its '
-                  '${_ordinalWord(game.currentSeason)} season.',
+                  '${widget.game.showName ?? "Your show"} was canceled during its '
+                  '${_ordinalWord(widget.game.currentSeason)} season.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: _fontFamily,
@@ -72,7 +106,9 @@ class GameOverScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 36),
                 Text(
-                  'Press Space to Continue',
+                  _spaceEnabled
+                      ? 'Press Space to Continue'
+                      : 'Continue in $_remainingSeconds seconds',
                   style: TextStyle(
                     fontFamily: _fontFamily,
                     fontSize: 36,

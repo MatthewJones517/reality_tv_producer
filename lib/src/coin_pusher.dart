@@ -294,7 +294,7 @@ class CoinPusher extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    health = (health - dt).clamp(0, 100);
+    health = (health - dt * 3).clamp(0, 100);
     if (health <= 0) game.triggerGameOver();
     if (_launcherCooldown > 0) _launcherCooldown -= dt;
     _world.stepDt(dt);

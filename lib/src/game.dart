@@ -122,9 +122,6 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
         case GameScene.playing:
           activePusher?.shoot();
           return KeyEventResult.handled;
-        case GameScene.gameOver:
-          resetToTitle();
-          return KeyEventResult.handled;
         default:
           break;
       }
