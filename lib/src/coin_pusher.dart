@@ -147,6 +147,7 @@ class CoinPusher extends PositionComponent
     );
     body.linearVelocity = f2d.Vector2(_pushSpeedPx * _scale, 0);
     add(_pusher!);
+    add(_LauncherOverlay(this)..priority = 100);
   }
 
   Future<void> _spawnTokens() async {
@@ -311,12 +312,7 @@ class CoinPusher extends PositionComponent
     canvas.drawRect(size.toRect(), ui.Paint()..color = const ui.Color(_bgColor));
     super.render(canvas);
     _renderEdge(canvas);
-    final blocked = _launcherBlocked;
-    _renderLauncher(canvas, _topLauncherY, _topAngle(), disabled: blocked);
-    _renderLauncher(canvas, _bottomLauncherY, _bottomAngle(), disabled: blocked);
   }
-
-  static const _launcherDrawSize = 160.0;
 
   void _renderEdge(ui.Canvas canvas) {
     final img = _edgeImage;
@@ -330,17 +326,36 @@ class CoinPusher extends PositionComponent
         img, srcRect, dstRect, ui.Paint()..filterQuality = ui.FilterQuality.low);
   }
 
-  void _renderLauncher(
-    ui.Canvas canvas,
-    double y,
-    double angle, {
-    required bool disabled,
-  }) {
-    final img = _launcherImage;
+}
+
+class _LauncherOverlay extends PositionComponent {
+  static const _launcherDrawSize = 160.0;
+
+  final CoinPusher pusher;
+
+  _LauncherOverlay(this.pusher);
+
+  @override
+  void render(ui.Canvas canvas) {
+    final img = pusher._launcherImage;
     if (img == null) return;
 
+    final blocked = pusher._launcherBlocked;
+    _drawLauncher(
+        canvas, CoinPusher._topLauncherY, pusher._topAngle(), blocked, img);
+    _drawLauncher(canvas, CoinPusher._bottomLauncherY, pusher._bottomAngle(),
+        blocked, img);
+  }
+
+  void _drawLauncher(
+    ui.Canvas canvas,
+    double y,
+    double angle,
+    bool disabled,
+    ui.Image img,
+  ) {
     canvas.save();
-    canvas.translate(_launcherX, y);
+    canvas.translate(CoinPusher._launcherX, y);
     canvas.rotate(angle);
 
     final srcRect = ui.Rect.fromLTWH(
