@@ -145,9 +145,14 @@ class PlayScreen extends PositionComponent
     game.activePusher = coinPusher;
     add(coinPusher);
 
+    add(_HealthBarDisplay(
+      coinPusher: coinPusher,
+      position: Vector2(ratingsSlotX + ratingsWidth / 2, 85),
+    ));
+
     add(_CoinCounterDisplay(
       coinPusher: coinPusher,
-      position: Vector2(1520, 1080 - _bottomBarHeight / 2),
+      position: Vector2(1150, 1080 - _bottomBarHeight / 2),
     ));
 
     add(_ShowInfoDisplay(
@@ -160,6 +165,62 @@ class PlayScreen extends PositionComponent
       coinPusher: coinPusher,
       position: Vector2(20, 1080 - _bottomBarHeight / 2),
     ));
+  }
+}
+
+class _HealthBarDisplay extends PositionComponent {
+  static const _barWidth = 400.0;
+  static const _barHeight = 24.0;
+  static const _green = Color(0xFF22C55E);
+  static const _yellow = Color(0xFFEAB308);
+  static const _red = Color(0xFFEF4444);
+  static const _bgColor = Color(0xFF333333);
+
+  final CoinPusher coinPusher;
+
+  _HealthBarDisplay({
+    required this.coinPusher,
+    required super.position,
+  }) {
+    anchor = Anchor.center;
+  }
+
+  Color _colorForHealth(double health) {
+    if (health >= 80) return _green;
+    if (health >= 35) return _yellow;
+    return _red;
+  }
+
+  @override
+  void render(ui.Canvas canvas) {
+    final h = coinPusher.health.clamp(0.0, 100.0);
+    final fillFraction = h / 100;
+
+    final barRect = ui.Rect.fromCenter(
+      center: ui.Offset.zero,
+      width: _barWidth,
+      height: _barHeight,
+    );
+    final radius = ui.Radius.circular(_barHeight / 2);
+
+    canvas.drawRRect(
+      ui.RRect.fromRectAndRadius(barRect, radius),
+      ui.Paint()..color = _bgColor,
+    );
+
+    if (fillFraction > 0) {
+      final fillWidth = _barWidth * fillFraction;
+      final fillRect = ui.Rect.fromLTRB(
+        -_barWidth / 2,
+        -_barHeight / 2,
+        -_barWidth / 2 + fillWidth,
+        _barHeight / 2,
+      );
+      canvas.drawRRect(
+        ui.RRect.fromRectAndRadius(fillRect, radius),
+        ui.Paint()..color = _colorForHealth(h),
+      );
+    }
   }
 }
 

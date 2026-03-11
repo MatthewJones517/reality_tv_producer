@@ -1,0 +1,89 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import 'game.dart';
+
+class GameOverScreen extends StatelessWidget {
+  final RealityTvGame game;
+
+  const GameOverScreen({super.key, required this.game});
+
+  static const _pink = Color(0xFFFF1493);
+  static const _fontFamily = 'VT323';
+
+  static String _ordinalWord(int n) {
+    return switch (n) {
+      1 => 'first',
+      2 => 'second',
+      3 => 'third',
+      4 => 'fourth',
+      5 => 'fifth',
+      _ => '$n',
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xCC000000),
+      child: KeyboardListener(
+        focusNode: FocusNode()..requestFocus(),
+        autofocus: true,
+        onKeyEvent: (event) {
+          if (event is KeyDownEvent &&
+              event.logicalKey == LogicalKeyboardKey.space) {
+            game.resetToTitle();
+          }
+        },
+        child: Center(
+          child: Container(
+            width: 900,
+            margin: const EdgeInsets.symmetric(vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 70, vertical: 48),
+            decoration: BoxDecoration(
+              color: const Color(0xEE111111),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: _pink, width: 3),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  "You've Been Cancelled!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'CinzelDecorative',
+                    fontSize: 56,
+                    fontWeight: FontWeight.bold,
+                    color: _pink,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  '${game.showName ?? "Your show"} was canceled during its '
+                  '${_ordinalWord(game.currentSeason)} season.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: _fontFamily,
+                    fontSize: 32,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+                const SizedBox(height: 36),
+                Text(
+                  'Press Space to Continue',
+                  style: TextStyle(
+                    fontFamily: _fontFamily,
+                    fontSize: 36,
+                    color: Colors.white.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -10,7 +10,7 @@ import 'coin_pusher.dart';
 import 'play_screen.dart';
 import 'title_screen.dart';
 
-enum GameScene { title, showName, howToPlay, cast, playing }
+enum GameScene { title, showName, howToPlay, cast, playing, gameOver }
 
 class RealityTvGame extends FlameGame with KeyboardEvents {
   static const _width = 1920.0;
@@ -28,6 +28,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
 
   GameScene _scene = GameScene.title;
   String? showName;
+  int currentSeason = 1;
   CastScreen? _castScreen;
   List<Character> _currentCast = [];
   CoinPusher? activePusher;
@@ -65,6 +66,25 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     world.add(_castScreen!);
   }
 
+  void triggerGameOver() {
+    if (_scene != GameScene.playing) return;
+    _scene = GameScene.gameOver;
+    overlays.add('gameOver');
+    pauseEngine();
+  }
+
+  void resetToTitle() {
+    overlays.remove('gameOver');
+    world.children.whereType<PlayScreen>().forEach((c) => c.removeFromParent());
+    world.add(TitleScreen());
+    _scene = GameScene.title;
+    showName = null;
+    currentSeason = 1;
+    _currentCast = [];
+    activePusher = null;
+    resumeEngine();
+  }
+
   void handleShootClick(int buttons) {
     if (_scene != GameScene.playing || activePusher == null) return;
     switch (buttons) {
@@ -94,6 +114,9 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
           _castScreen?.removeFromParent();
           _castScreen = null;
           world.add(PlayScreen(cast: _currentCast));
+          return KeyEventResult.handled;
+        case GameScene.gameOver:
+          resetToTitle();
           return KeyEventResult.handled;
         default:
           break;
