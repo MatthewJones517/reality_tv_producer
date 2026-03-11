@@ -12,11 +12,7 @@ void main() {
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     home: Scaffold(
-      body: Listener(
-        onPointerDown: (event) {
-          game.handleShootClick(event.buttons);
-        },
-        child: GameWidget(
+      body: GameWidget(
           game: game,
           focusNode: gameFocusNode,
           overlayBuilderMap: {
@@ -27,7 +23,6 @@ void main() {
             'gameOver': (context, game) =>
                 GameOverScreen(game: game as RealityTvGame),
           },
-        ),
       ),
     ),
   ));

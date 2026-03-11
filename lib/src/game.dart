@@ -85,15 +85,19 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     resumeEngine();
   }
 
-  void handleShootClick(int buttons) {
-    if (_scene != GameScene.playing || activePusher == null) return;
-    switch (buttons) {
-      case 1: // kPrimaryButton - left click
-        activePusher!.shootTop();
-        break;
-      case 2: // kSecondaryButton - right click
-        activePusher!.shootBottom();
-        break;
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (_scene == GameScene.playing && activePusher != null) {
+      final keys = HardwareKeyboard.instance.logicalKeysPressed;
+      if (keys.contains(LogicalKeyboardKey.keyD) ||
+          keys.contains(LogicalKeyboardKey.arrowUp)) {
+        activePusher!.rotateLauncherUp(dt);
+      }
+      if (keys.contains(LogicalKeyboardKey.keyA) ||
+          keys.contains(LogicalKeyboardKey.arrowDown)) {
+        activePusher!.rotateLauncherDown(dt);
+      }
     }
   }
 
@@ -114,6 +118,9 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
           _castScreen?.removeFromParent();
           _castScreen = null;
           world.add(PlayScreen(cast: _currentCast));
+          return KeyEventResult.handled;
+        case GameScene.playing:
+          activePusher?.shoot();
           return KeyEventResult.handled;
         case GameScene.gameOver:
           resetToTitle();

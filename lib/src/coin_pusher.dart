@@ -22,14 +22,13 @@ class CoinPusher extends PositionComponent
   static const _pushSpeedPx = 120.0;
   static const _pusherStartX = 0.0;
 
-  static const _launcherX = _pushDistance * 2 / 3;
-  static const _topLauncherY = 50.0;
-  static const _bottomLauncherY = fieldHeight - 50.0;
   static const _shootSpeed = 800.0;
   static const _launcherRadius = 24.0;
   static const _pusherHalfW = 8.0;
-  static const _arcHalf = pi / 8;
-  static const _rotSpeed = 2.0;
+  static const _launcherAngleSpeed = 3.0;
+  static const _launcherAngleMin = -pi / 2 + 0.1;
+  static const _launcherAngleMax = pi / 2 - 0.1;
+  static const _outerDisableMargin = 40.0;
 
   static const queueSize = 6;
 
@@ -45,15 +44,14 @@ class CoinPusher extends PositionComponent
   ui.Image? dramaImage;
   ui.Image? tvImage;
 
-  static const _fireCooldown = 0.4;
+  static const _fireCooldown = 0.05;
 
   final List<TokenBody> _pendingRemoval = [];
   final List<TokenType> tokenQueue = [];
   int coinsCollected = 0;
   double health = 100.0;
-  double _rotTime = 0;
-  double _topCooldown = 0;
-  double _bottomCooldown = 0;
+  double launcherAngle = 0;
+  double _launcherCooldown = 0;
 
   CoinPusher() {
     size = Vector2(fieldWidth, fieldHeight);
@@ -226,33 +224,37 @@ class CoinPusher extends PositionComponent
     ));
   }
 
-  bool get _launcherBlocked {
+  bool get launcherBlocked {
     if (_pusher == null) return true;
     final pusherRightEdge =
         _pusher!.body.position.x / _scale + _pusherHalfW;
-    return pusherRightEdge >= _launcherX - _launcherRadius;
+    final outerLimit = _pusher!.startX + _pushDistance - _outerDisableMargin;
+    return pusherRightEdge >= outerLimit;
   }
 
-  double get _oscillation => sin(_rotTime * _rotSpeed);
+  Vector2 get launcherPosition {
+    if (_pusher == null) return Vector2.zero();
+    return _pusher!.position.clone();
+  }
 
-  double _topAngle() => pi / 2 + _oscillation * _arcHalf;
-  double _bottomAngle() => -pi / 2 + _oscillation * _arcHalf;
+  void rotateLauncherUp(double dt) {
+    launcherAngle = (launcherAngle + _launcherAngleSpeed * dt)
+        .clamp(_launcherAngleMin, _launcherAngleMax);
+  }
 
-  void shootTop() {
-    if (!_launcherBlocked && _topCooldown <= 0) {
-      _topCooldown = _fireCooldown;
-      _shootAt(_topLauncherY, _topAngle());
+  void rotateLauncherDown(double dt) {
+    launcherAngle = (launcherAngle - _launcherAngleSpeed * dt)
+        .clamp(_launcherAngleMin, _launcherAngleMax);
+  }
+
+  void shoot() {
+    if (!launcherBlocked && _launcherCooldown <= 0) {
+      _launcherCooldown = _fireCooldown;
+      _shootAt(launcherPosition.x, launcherPosition.y, launcherAngle);
     }
   }
 
-  void shootBottom() {
-    if (!_launcherBlocked && _bottomCooldown <= 0) {
-      _bottomCooldown = _fireCooldown;
-      _shootAt(_bottomLauncherY, _bottomAngle());
-    }
-  }
-
-  Future<void> _shootAt(double originY, double angle) async {
+  Future<void> _shootAt(double originX, double originY, double angle) async {
     if (tokenQueue.isEmpty) return;
     final type = tokenQueue.removeLast();
     _fillQueue();
@@ -260,7 +262,7 @@ class CoinPusher extends PositionComponent
     final radius = (diameter / 2) * _scale;
 
     final offset = _launcherRadius + diameter / 2 + 4;
-    final spawnX = _launcherX + cos(angle) * offset;
+    final spawnX = originX + cos(angle) * offset;
     final spawnY = originY + sin(angle) * offset;
 
     final bodyDef = f2d.BodyDef(
@@ -292,11 +294,9 @@ class CoinPusher extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    _rotTime += dt;
     health = (health - dt).clamp(0, 100);
     if (health <= 0) game.triggerGameOver();
-    if (_topCooldown > 0) _topCooldown -= dt;
-    if (_bottomCooldown > 0) _bottomCooldown -= dt;
+    if (_launcherCooldown > 0) _launcherCooldown -= dt;
     _world.stepDt(dt);
 
     for (final token in _pendingRemoval) {
@@ -345,22 +345,21 @@ class _LauncherOverlay extends PositionComponent {
     final img = pusher._launcherImage;
     if (img == null) return;
 
-    final blocked = pusher._launcherBlocked;
+    final pos = pusher.launcherPosition;
     _drawLauncher(
-        canvas, CoinPusher._topLauncherY, pusher._topAngle(), blocked, img);
-    _drawLauncher(canvas, CoinPusher._bottomLauncherY, pusher._bottomAngle(),
-        blocked, img);
+        canvas, pos.x, pos.y, pusher.launcherAngle, pusher.launcherBlocked, img);
   }
 
   void _drawLauncher(
     ui.Canvas canvas,
+    double x,
     double y,
     double angle,
     bool disabled,
     ui.Image img,
   ) {
     canvas.save();
-    canvas.translate(CoinPusher._launcherX, y);
+    canvas.translate(x, y);
     canvas.rotate(angle);
 
     final srcRect = ui.Rect.fromLTWH(
