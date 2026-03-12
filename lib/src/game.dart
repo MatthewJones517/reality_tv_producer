@@ -72,10 +72,6 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     world.add(_castScreen!);
   }
 
-  void _onEnterCastScreen() {
-    _castRerollCount = 0;
-  }
-
   void _advanceToNextSeason() async {
     currentSeason++;
     currentEpisode = 1;
@@ -97,20 +93,24 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     );
     world.add(_castScreen!);
     _scene = GameScene.cast;
-    _onEnterCastScreen();
     overlays.add('castCooldown');
     gameFocusNode.requestFocus();
   }
 
-  int _castRerollCount = 0;
+  int _rerollCount = 0;
 
-  int get castRerollCost => 5 * (1 << _castRerollCount);
+  int get rerollCost => 5 * (1 << _rerollCount);
+
+  bool performReroll() {
+    if (coins < rerollCost) return false;
+    coins -= rerollCost;
+    _rerollCount++;
+    return true;
+  }
 
   void rerollContestants() async {
     if (currentSeason < 2) return;
-    if (coins < castRerollCost) return;
-    coins -= castRerollCost;
-    _castRerollCount++;
+    if (!performReroll()) return;
     _currentCast = [];
     for (int i = 0; i < 4; i++) {
       _currentCast.add(await CharacterGenerator.generate());
@@ -173,6 +173,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     _episodeTimer = 0;
     coins = 0;
     unlockedTokens.clear();
+    _rerollCount = 0;
     _currentCast = [];
     activePusher = null;
     resumeEngine();
@@ -206,11 +207,11 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
 
       final keys = HardwareKeyboard.instance.logicalKeysPressed;
       if (keys.contains(LogicalKeyboardKey.keyD) ||
-          keys.contains(LogicalKeyboardKey.arrowUp)) {
+          keys.contains(LogicalKeyboardKey.arrowDown)) {
         activePusher!.rotateLauncherUp(dt);
       }
       if (keys.contains(LogicalKeyboardKey.keyA) ||
-          keys.contains(LogicalKeyboardKey.arrowDown)) {
+          keys.contains(LogicalKeyboardKey.arrowUp)) {
         activePusher!.rotateLauncherDown(dt);
       }
     }

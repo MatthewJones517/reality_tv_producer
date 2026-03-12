@@ -83,14 +83,14 @@ class _CastCooldownOverlayState extends State<CastCooldownOverlay> {
                   if (widget.game.currentSeason >= 2) ...[
                     const SizedBox(height: 12),
                     TextButton(
-                      onPressed: widget.game.coins >= widget.game.castRerollCost
+                      onPressed: widget.game.coins >= widget.game.rerollCost
                           ? () {
                               widget.game.rerollContestants();
                               setState(() {});
                             }
                           : null,
                       child: Text(
-                        'Reroll contestants (${widget.game.castRerollCost} coins)',
+                        'Reroll contestants (${widget.game.rerollCost} coins)',
                         style: const TextStyle(
                           fontFamily: _fontFamily,
                           fontSize: 24,

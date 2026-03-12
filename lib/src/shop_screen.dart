@@ -29,9 +29,6 @@ class _ShopScreenState extends State<ShopScreen> {
   late List<Attribute> _options;
   final _random = Random();
   final Set<Attribute> _purchasedThisSession = {};
-  int _rerollCount = 0;
-
-  int get _rerollCost => 5 * (1 << _rerollCount);
 
   @override
   void initState() {
@@ -40,12 +37,8 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _rerollShop() {
-    if (widget.game.coins < _rerollCost) return;
-    setState(() {
-      widget.game.coins -= _rerollCost;
-      _rerollCount++;
-      _pickOptions();
-    });
+    if (!widget.game.performReroll()) return;
+    setState(() => _pickOptions());
   }
 
   void _pickOptions() {
@@ -120,16 +113,33 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: widget.game.coins >= _rerollCost
+                    ElevatedButton(
+                      onPressed: widget.game.coins >= widget.game.rerollCost
                           ? _rerollShop
                           : null,
-                      child: Text(
-                        'Reroll ($_rerollCost coins)',
-                        style: const TextStyle(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _pink,
+                        disabledBackgroundColor: Colors.grey,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        textStyle: const TextStyle(
                           fontFamily: _fontFamily,
                           fontSize: 24,
                         ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Reroll ('),
+                          Image.asset(
+                            'assets/playfield/coin.png',
+                            width: 24,
+                            height: 24,
+                            fit: BoxFit.contain,
+                          ),
+                          Text(' ${widget.game.rerollCost})'),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -208,14 +218,17 @@ class _ShopScreenState extends State<ShopScreen> {
                           shrinkWrap: true,
                           children: [
                             if (widget.game.unlockedTokens.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Text(
-                                  'None yet',
-                                  style: TextStyle(
-                                    fontFamily: _fontFamily,
-                                    fontSize: 28,
-                                    color: Colors.white.withValues(alpha: 0.6),
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Text(
+                                    'None yet',
+                                    style: TextStyle(
+                                      fontFamily: _fontFamily,
+                                      fontSize: 28,
+                                      color:
+                                          Colors.white.withValues(alpha: 0.6),
+                                    ),
                                   ),
                                 ),
                               )
