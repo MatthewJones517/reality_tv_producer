@@ -12,8 +12,7 @@ enum Attribute {
   scheming,
   forgetful,
   jealous,
-  generous,
-  grudgeHolder;
+  generous;
 
   static const labels = {
     flirty: 'Flirty',
@@ -30,7 +29,6 @@ enum Attribute {
     forgetful: 'Forgetful',
     jealous: 'Jealous',
     generous: 'Generous',
-    grudgeHolder: 'Grudge-holder',
   };
 
   String get label => labels[this]!;
