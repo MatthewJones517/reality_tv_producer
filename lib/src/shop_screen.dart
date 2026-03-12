@@ -21,6 +21,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   late List<Attribute> _options;
   final _random = Random();
+  final Set<Attribute> _purchasedThisSession = {};
 
   @override
   void initState() {
@@ -54,7 +55,7 @@ class _ShopScreenState extends State<ShopScreen> {
     setState(() {
       widget.game.coins -= _unlockCost;
       widget.game.unlockedTokens[attr] = current + 1;
-      _pickOptions();
+      _purchasedThisSession.add(attr);
     });
   }
 
@@ -109,16 +110,21 @@ class _ShopScreenState extends State<ShopScreen> {
                         final canUnlock = level == 0 &&
                             widget.game.unlockedTokens.length < 3;
                         final canLevelUp = level > 0 && level < 3;
+                        final notPurchasedThisSession =
+                            !_purchasedThisSession.contains(attr);
                         final canBuy =
+                            notPurchasedThisSession &&
                             (canUnlock || canLevelUp) &&
                             widget.game.coins >= _unlockCost;
 
+                        final grayedOut = _purchasedThisSession.contains(attr);
                         return _ShopOption(
                           attribute: attr,
-                          level: level,
+                          level: widget.game.unlockedTokens[attr] ?? 0,
                           cost: _unlockCost,
                           canBuy: canBuy,
                           isLevelUp: level > 0,
+                          grayedOut: grayedOut,
                           onPurchase: () => _purchase(attr),
                         );
                       }).toList(),
@@ -151,9 +157,9 @@ class _ShopScreenState extends State<ShopScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text(
-                      'Unlocked Chips',
-                      style: TextStyle(
+                    Text(
+                      'Unlocked Chips (${widget.game.unlockedTokens.length}/3)',
+                      style: const TextStyle(
                         fontFamily: 'CinzelDecorative',
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -217,6 +223,7 @@ class _ShopOption extends StatelessWidget {
   final int cost;
   final bool canBuy;
   final bool isLevelUp;
+  final bool grayedOut;
   final VoidCallback onPurchase;
 
   const _ShopOption({
@@ -225,6 +232,7 @@ class _ShopOption extends StatelessWidget {
     required this.cost,
     required this.canBuy,
     required this.isLevelUp,
+    this.grayedOut = false,
     required this.onPurchase,
   });
 
@@ -233,18 +241,20 @@ class _ShopOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 200,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: canBuy ? _pink : Colors.grey.withValues(alpha: 0.5),
-          width: 2,
+    return Opacity(
+      opacity: grayedOut ? 0.5 : 1.0,
+      child: Container(
+        width: 200,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A2E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: canBuy ? _pink : Colors.grey.withValues(alpha: 0.5),
+            width: 2,
+          ),
         ),
-      ),
-      child: Column(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Image.asset(
@@ -290,6 +300,7 @@ class _ShopOption extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

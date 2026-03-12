@@ -59,25 +59,26 @@ class CoinPusher extends PositionComponent
     coinsCollected = initialCoins;
   }
 
+  QueueToken _randomDramaOrAttribute() {
+    final unlocked = game.unlockedTokens;
+    if (unlocked.isEmpty) return DramaQueueToken();
+    final choices = <QueueToken>[DramaQueueToken()]
+      ..addAll(unlocked.entries
+          .map((e) => AttributeQueueToken(e.key, e.value)));
+    return choices[_random.nextInt(choices.length)];
+  }
+
   QueueToken _randomQueueToken() {
     final r = _random.nextDouble();
     if (r < 0.90) return CoinQueueToken();
-    final unlocked = game.unlockedTokens;
-    if (unlocked.isEmpty) return DramaQueueToken();
-    final attrs = unlocked.entries.toList();
-    final entry = attrs[_random.nextInt(attrs.length)];
-    return AttributeQueueToken(entry.key, entry.value);
+    return _randomDramaOrAttribute();
   }
 
   /// 90% coin, 10% drama/attribute for board spawn.
   QueueToken _randomSpawnToken() {
     final r = _random.nextDouble();
     if (r < 0.90) return CoinQueueToken();
-    final unlocked = game.unlockedTokens;
-    if (unlocked.isEmpty) return DramaQueueToken();
-    final attrs = unlocked.entries.toList();
-    final entry = attrs[_random.nextInt(attrs.length)];
-    return AttributeQueueToken(entry.key, entry.value);
+    return _randomDramaOrAttribute();
   }
 
   void _fillQueue() {
