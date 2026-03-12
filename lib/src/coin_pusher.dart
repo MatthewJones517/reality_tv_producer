@@ -5,6 +5,7 @@ import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 import 'package:forge2d/forge2d.dart' as f2d;
 
+import 'character.dart';
 import 'game.dart';
 import 'pusher_body.dart';
 import 'token_body.dart';
@@ -17,7 +18,6 @@ class CoinPusher extends PositionComponent
   static const fieldHeight = 854.0;
 
   static const _tokenCount = 550;
-  static const _dramaRatio = 0.10;
   static const _pushDistance = 350.0;
   static const _pushSpeedPx = 120.0;
   static const _pusherStartX = 0.0;
@@ -43,26 +43,36 @@ class CoinPusher extends PositionComponent
   ui.Image? coinImage;
   ui.Image? dramaImage;
   ui.Image? tvImage;
+  final Map<Attribute, ui.Image> _attributeImages = {};
 
   static const _fireCooldown = 0.05;
 
   final List<TokenBody> _pendingRemoval = [];
-  final List<TokenType> tokenQueue = [];
+  final List<QueueToken> tokenQueue = [];
   int coinsCollected = 0;
   double health = 100.0;
   double launcherAngle = 0;
   double _launcherCooldown = 0;
 
-  CoinPusher() {
+  CoinPusher({int initialCoins = 0}) {
     size = Vector2(fieldWidth, fieldHeight);
+    coinsCollected = initialCoins;
   }
 
-  TokenType _randomTokenType() =>
-      _random.nextDouble() < 0.90 ? TokenType.coin : TokenType.drama;
+  QueueToken _randomQueueToken() {
+    final r = _random.nextDouble();
+    if (r < 0.70) return CoinQueueToken();
+    if (r < 0.90) return DramaQueueToken();
+    final unlocked = game.unlockedTokens;
+    if (unlocked.isEmpty) return DramaQueueToken();
+    final attrs = unlocked.entries.toList();
+    final entry = attrs[_random.nextInt(attrs.length)];
+    return AttributeQueueToken(entry.key, entry.value);
+  }
 
   void _fillQueue() {
     while (tokenQueue.length < queueSize) {
-      tokenQueue.insert(0, _randomTokenType());
+      tokenQueue.insert(0, _randomQueueToken());
     }
   }
 
@@ -76,6 +86,12 @@ class CoinPusher extends PositionComponent
     }
     coinImage = await game.images.load('assets/playfield/coin.png');
     dramaImage = await game.images.load('assets/playfield/Drama_Chip.png');
+    for (final attr in Attribute.values) {
+      final name =
+          '${attr.name[0].toUpperCase()}${attr.name.substring(1)}_Chip.png';
+      _attributeImages[attr] =
+          await game.images.load('assets/playfield/$name');
+    }
     _smokeImage = await game.images.load('assets/playfield/smoke.png');
     tvImage = await game.images.load('assets/playfield/tv_no_antenna.png');
     final pusherImage = await game.images.load('assets/playfield/pusher.png');
@@ -150,12 +166,9 @@ class CoinPusher extends PositionComponent
   }
 
   Future<void> _spawnTokens() async {
-    final dramaCount = (_tokenCount * _dramaRatio).round();
-    final coinCount = _tokenCount - dramaCount;
-
     for (int i = 0; i < _tokenCount; i++) {
-      final type = i < coinCount ? TokenType.coin : TokenType.drama;
-      final diameter = TokenBody.diameterFor(type);
+      final queueToken = _randomQueueToken();
+      final diameter = TokenBody.diameterForQueueToken(queueToken);
       final radius = (diameter / 2) * _scale;
 
       final margin = diameter / 2 + 10;
@@ -182,7 +195,19 @@ class CoinPusher extends PositionComponent
         density: 1.0,
       ));
 
-      final token = TokenBody(type: type, body: body, physScale: _scale);
+      final (type, attr, level) = switch (queueToken) {
+        CoinQueueToken() => (TokenType.coin, null, 1),
+        DramaQueueToken() => (TokenType.drama, null, 1),
+        AttributeQueueToken(:final attribute, :final level) =>
+          (TokenType.drama, attribute, level),
+      };
+      final token = TokenBody(
+        type: type,
+        body: body,
+        physScale: _scale,
+        attribute: attr,
+        attributeLevel: level,
+      );
       await token.loadSprite((path) => game.images.load(path));
       _tokens.add(token);
       add(token);
@@ -192,7 +217,16 @@ class CoinPusher extends PositionComponent
   void onTokenHitDropZone(TokenBody token) {
     if (!token.collected) {
       token.collected = true;
-      if (token.type == TokenType.drama) {
+      if (token.type == TokenType.coin) {
+        // Handled in update (coinsCollected)
+      } else if (token.isAttributeToken && token.attribute != null) {
+        final matchCount = game.currentCast
+            .where((c) => c.attributes.contains(token.attribute))
+            .length;
+        final perChar = token.attributeLevel;
+        final multiplier = 1 + matchCount * perChar;
+        health = (health + 5 * multiplier).clamp(0, 100);
+      } else {
         health = (health + 5).clamp(0, 100);
       }
       _pendingRemoval.add(token);
@@ -233,6 +267,14 @@ class CoinPusher extends PositionComponent
     return pusherRightEdge >= outerLimit;
   }
 
+  ui.Image? imageForQueueToken(QueueToken t) {
+    return switch (t) {
+      CoinQueueToken() => coinImage,
+      DramaQueueToken() => dramaImage,
+      AttributeQueueToken(attribute: final a) => _attributeImages[a],
+    };
+  }
+
   Vector2 get launcherPosition {
     if (_pusher == null) return Vector2.zero();
     return _pusher!.position.clone();
@@ -257,9 +299,9 @@ class CoinPusher extends PositionComponent
 
   Future<void> _shootAt(double originX, double originY, double angle) async {
     if (tokenQueue.isEmpty) return;
-    final type = tokenQueue.removeLast();
+    final queueToken = tokenQueue.removeLast();
     _fillQueue();
-    final diameter = TokenBody.diameterFor(type);
+    final diameter = TokenBody.diameterForQueueToken(queueToken);
     final radius = (diameter / 2) * _scale;
 
     final offset = _launcherRadius + diameter / 2 + 4;
@@ -286,7 +328,19 @@ class CoinPusher extends PositionComponent
     final vy = sin(angle) * _shootSpeed * _scale;
     body.linearVelocity = f2d.Vector2(vx, vy);
 
-    final token = TokenBody(type: type, body: body, physScale: _scale);
+    final (type, attr, level) = switch (queueToken) {
+      CoinQueueToken() => (TokenType.coin, null, 1),
+      DramaQueueToken() => (TokenType.drama, null, 1),
+      AttributeQueueToken(:final attribute, :final level) =>
+        (TokenType.drama, attribute, level),
+    };
+    final token = TokenBody(
+      type: type,
+      body: body,
+      physScale: _scale,
+      attribute: attr,
+      attributeLevel: level,
+    );
     await token.loadSprite((path) => game.images.load(path));
     _tokens.add(token);
     add(token);

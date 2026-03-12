@@ -7,7 +7,6 @@ import 'package:flutter/painting.dart';
 import 'character.dart';
 import 'coin_pusher.dart';
 import 'game.dart';
-import 'token_body.dart';
 
 class PlayScreen extends PositionComponent
     with HasGameReference<RealityTvGame> {
@@ -21,8 +20,9 @@ class PlayScreen extends PositionComponent
   static const _pink = Color(0xFFFF1493);
 
   final List<Character> cast;
+  final int initialCoins;
 
-  PlayScreen({required this.cast});
+  PlayScreen({required this.cast, this.initialCoins = 0});
 
   @override
   Future<void> onLoad() async {
@@ -141,7 +141,8 @@ class PlayScreen extends PositionComponent
       ),
     ));
 
-    final coinPusher = CoinPusher()..position = Vector2(0, _topBarHeight + 3);
+    final coinPusher = CoinPusher(initialCoins: initialCoins)
+      ..position = Vector2(0, _topBarHeight + 3);
     game.activePusher = coinPusher;
     add(coinPusher);
 
@@ -360,7 +361,8 @@ class _ShowInfoDisplay extends PositionComponent {
   @override
   void render(ui.Canvas canvas) {
     final tvImg = coinPusher.tvImage;
-    final text = 'S1E1: ${game.showName ?? ''}';
+    final text =
+        'S${game.currentSeason}E${game.currentEpisode}: ${game.showName ?? ''}';
     final textWidth = _textPaint.toTextPainter(text).width;
 
     final textRight = 0.0;
@@ -404,22 +406,19 @@ class _TokenQueueDisplay extends PositionComponent {
   @override
   void render(ui.Canvas canvas) {
     final queue = coinPusher.tokenQueue;
-    final coinImg = coinPusher.coinImage;
-    final dramaImg = coinPusher.dramaImage;
-    if (coinImg == null || dramaImg == null) return;
-
     final count = queue.length;
 
     for (int i = 0; i < count; i++) {
-      final img = queue[i] == TokenType.coin ? coinImg : dramaImg;
+      final img = coinPusher.imageForQueueToken(queue[i]);
+      if (img == null) continue;
       final x = i * (_tokenSize + _spacing);
       final y = -_tokenSize / 2;
 
       final srcRect = ui.Rect.fromLTWH(
           0, 0, img.width.toDouble(), img.height.toDouble());
       final dstRect = ui.Rect.fromLTWH(x, y, _tokenSize, _tokenSize);
-      canvas.drawImageRect(
-          img, srcRect, dstRect, ui.Paint()..filterQuality = ui.FilterQuality.low);
+      canvas.drawImageRect(img, srcRect, dstRect,
+          ui.Paint()..filterQuality = ui.FilterQuality.low);
     }
   }
 }

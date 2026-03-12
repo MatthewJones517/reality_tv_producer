@@ -5,6 +5,8 @@ import 'src/game.dart';
 import 'src/game_over_screen.dart';
 import 'src/how_to_play_screen.dart';
 import 'src/show_name_screen.dart';
+import 'src/shop_screen.dart';
+import 'src/win_screen.dart';
 
 void main() {
   final gameFocusNode = FocusNode();
@@ -22,6 +24,10 @@ void main() {
                 HowToPlayScreen(game: game as RealityTvGame),
             'gameOver': (context, game) =>
                 GameOverScreen(game: game as RealityTvGame),
+            'shop': (context, game) =>
+                ShopScreen(game: game as RealityTvGame),
+            'win': (context, game) =>
+                WinScreen(game: game as RealityTvGame),
           },
       ),
     ),

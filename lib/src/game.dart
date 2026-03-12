@@ -6,11 +6,12 @@ import 'package:flutter/widgets.dart';
 
 import 'cast_screen.dart';
 import 'character.dart';
+import 'character_generator.dart';
 import 'coin_pusher.dart';
 import 'play_screen.dart';
 import 'title_screen.dart';
 
-enum GameScene { title, showName, howToPlay, cast, playing, gameOver }
+enum GameScene { title, showName, howToPlay, cast, playing, shop, gameOver, win }
 
 class RealityTvGame extends FlameGame with KeyboardEvents {
   static const _width = 1920.0;
@@ -29,8 +30,13 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   GameScene _scene = GameScene.title;
   String? showName;
   int currentSeason = 1;
+  int currentEpisode = 1;
+  double _episodeTimer = 0;
+  int coins = 0;
+  final Map<Attribute, int> unlockedTokens = {};
   CastScreen? _castScreen;
   List<Character> _currentCast = [];
+  List<Character> get currentCast => _currentCast;
   CoinPusher? activePusher;
 
   @override
@@ -62,8 +68,46 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
 
   void _showCastScreen() {
     _castScreen?.removeFromParent();
-    _castScreen = CastScreen();
+    _castScreen = CastScreen(seasonNumber: currentSeason);
     world.add(_castScreen!);
+  }
+
+  void _advanceToNextSeason() async {
+    currentSeason++;
+    currentEpisode = 1;
+    _episodeTimer = 0;
+    coins = activePusher?.coinsCollected ?? coins;
+
+    world.children.whereType<PlayScreen>().forEach((c) => c.removeFromParent());
+    activePusher = null;
+
+    _currentCast = [];
+    for (int i = 0; i < 4; i++) {
+      _currentCast.add(await CharacterGenerator.generate());
+    }
+
+    _castScreen?.removeFromParent();
+    _castScreen = CastScreen(
+      seasonNumber: currentSeason,
+      initialCast: _currentCast,
+    );
+    world.add(_castScreen!);
+    _scene = GameScene.cast;
+    gameFocusNode.requestFocus();
+  }
+
+  void finishShop() {
+    overlays.remove('shop');
+    activePusher?.coinsCollected = coins;
+    resumeEngine();
+  }
+
+  void triggerWin() {
+    if (_scene != GameScene.playing) return;
+    coins = activePusher?.coinsCollected ?? coins;
+    _scene = GameScene.win;
+    overlays.add('win');
+    pauseEngine();
   }
 
   void triggerGameOver() {
@@ -75,11 +119,18 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
 
   void resetToTitle() {
     overlays.remove('gameOver');
+    overlays.remove('win');
     world.children.whereType<PlayScreen>().forEach((c) => c.removeFromParent());
+    _castScreen?.removeFromParent();
+    _castScreen = null;
     world.add(TitleScreen());
     _scene = GameScene.title;
     showName = null;
     currentSeason = 1;
+    currentEpisode = 1;
+    _episodeTimer = 0;
+    coins = 0;
+    unlockedTokens.clear();
     _currentCast = [];
     activePusher = null;
     resumeEngine();
@@ -89,6 +140,28 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   void update(double dt) {
     super.update(dt);
     if (_scene == GameScene.playing && activePusher != null) {
+      _episodeTimer += dt;
+      while (_episodeTimer >= 10) {
+        _episodeTimer -= 10;
+        currentEpisode++;
+
+        if (currentEpisode % 3 == 0 && currentEpisode < 12) {
+          coins = activePusher!.coinsCollected;
+          overlays.add('shop');
+          pauseEngine();
+          return;
+        }
+        if (currentEpisode > 12) {
+          if (currentSeason >= 5) {
+            triggerWin();
+            return;
+          } else {
+            _advanceToNextSeason();
+            return;
+          }
+        }
+      }
+
       final keys = HardwareKeyboard.instance.logicalKeysPressed;
       if (keys.contains(LogicalKeyboardKey.keyD) ||
           keys.contains(LogicalKeyboardKey.arrowUp)) {
@@ -117,7 +190,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
           _currentCast = List.of(_castScreen!.cast);
           _castScreen?.removeFromParent();
           _castScreen = null;
-          world.add(PlayScreen(cast: _currentCast));
+          world.add(PlayScreen(cast: _currentCast, initialCoins: coins));
           return KeyEventResult.handled;
         case GameScene.playing:
           activePusher?.shoot();

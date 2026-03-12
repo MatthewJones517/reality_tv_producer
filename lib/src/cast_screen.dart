@@ -18,8 +18,20 @@ class CastScreen extends PositionComponent
 
   final int seasonNumber;
   final List<Character> cast = [];
+  final List<Character>? initialCast;
 
-  CastScreen({this.seasonNumber = 1});
+  CastScreen({this.seasonNumber = 1, this.initialCast});
+
+  static String _ordinal(int n) {
+    return switch (n) {
+      1 => 'One',
+      2 => 'Two',
+      3 => 'Three',
+      4 => 'Four',
+      5 => 'Five',
+      _ => '$n',
+    };
+  }
 
   @override
   Future<void> onLoad() async {
@@ -35,7 +47,7 @@ class CastScreen extends PositionComponent
     ));
 
     _addOutlinedText(
-      text: 'Season One Cast',
+      text: 'Season ${_ordinal(seasonNumber)} Cast',
       position: Vector2(960, 150),
       style: const TextStyle(
         fontFamily: 'CinzelDecorative',
@@ -47,8 +59,12 @@ class CastScreen extends PositionComponent
       strokeWidth: 6,
     );
 
-    for (int i = 0; i < 4; i++) {
-      cast.add(await CharacterGenerator.generate());
+    if (initialCast != null && initialCast!.length == 4) {
+      cast.addAll(initialCast!);
+    } else {
+      for (int i = 0; i < 4; i++) {
+        cast.add(await CharacterGenerator.generate());
+      }
     }
 
     final displaySize = Vector2.all(_frameSize * _displayScale);
