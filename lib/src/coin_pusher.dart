@@ -61,8 +61,18 @@ class CoinPusher extends PositionComponent
 
   QueueToken _randomQueueToken() {
     final r = _random.nextDouble();
-    if (r < 0.70) return CoinQueueToken();
-    if (r < 0.90) return DramaQueueToken();
+    if (r < 0.90) return CoinQueueToken();
+    final unlocked = game.unlockedTokens;
+    if (unlocked.isEmpty) return DramaQueueToken();
+    final attrs = unlocked.entries.toList();
+    final entry = attrs[_random.nextInt(attrs.length)];
+    return AttributeQueueToken(entry.key, entry.value);
+  }
+
+  /// 90% coin, 10% drama/attribute for board spawn.
+  QueueToken _randomSpawnToken() {
+    final r = _random.nextDouble();
+    if (r < 0.90) return CoinQueueToken();
     final unlocked = game.unlockedTokens;
     if (unlocked.isEmpty) return DramaQueueToken();
     final attrs = unlocked.entries.toList();
@@ -167,7 +177,7 @@ class CoinPusher extends PositionComponent
 
   Future<void> _spawnTokens() async {
     for (int i = 0; i < _tokenCount; i++) {
-      final queueToken = _randomQueueToken();
+      final queueToken = _randomSpawnToken();
       final diameter = TokenBody.diameterForQueueToken(queueToken);
       final radius = (diameter / 2) * _scale;
 
