@@ -44,8 +44,8 @@ class TokenBody extends PositionComponent {
   }
 
   final TokenType type;
-  final Attribute? attribute;
-  final int attributeLevel;
+  Attribute? attribute;
+  int attributeLevel;
   final f2d.Body body;
   final double physScale;
   Sprite? _sprite;
@@ -66,6 +66,16 @@ class TokenBody extends PositionComponent {
   bool get isAttributeToken => attribute != null;
 
   bool collected = false;
+
+  Future<void> convertToAttribute(
+    Attribute attr,
+    int level,
+    Future<ui.Image> Function(String) imageLoader,
+  ) async {
+    attribute = attr;
+    attributeLevel = level;
+    await loadSprite(imageLoader);
+  }
 
   Future<void> loadSprite(
     Future<ui.Image> Function(String) imageLoader,

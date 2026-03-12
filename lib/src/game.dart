@@ -72,6 +72,10 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     world.add(_castScreen!);
   }
 
+  void _onEnterCastScreen() {
+    _castRerollCount = 0;
+  }
+
   void _advanceToNextSeason() async {
     currentSeason++;
     currentEpisode = 1;
@@ -93,7 +97,45 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     );
     world.add(_castScreen!);
     _scene = GameScene.cast;
+    _onEnterCastScreen();
+    overlays.add('castCooldown');
     gameFocusNode.requestFocus();
+  }
+
+  int _castRerollCount = 0;
+
+  int get castRerollCost => 5 * (1 << _castRerollCount);
+
+  void rerollContestants() async {
+    if (currentSeason < 2) return;
+    if (coins < castRerollCost) return;
+    coins -= castRerollCost;
+    _castRerollCount++;
+    _currentCast = [];
+    for (int i = 0; i < 4; i++) {
+      _currentCast.add(await CharacterGenerator.generate());
+    }
+    _castScreen?.removeFromParent();
+    _castScreen = CastScreen(
+      seasonNumber: currentSeason,
+      initialCast: _currentCast,
+    );
+    world.add(_castScreen!);
+  }
+
+  void proceedFromCastScreen() {
+    overlays.remove('castCooldown');
+    _currentCast = List.of(_castScreen!.cast);
+    _castScreen?.removeFromParent();
+    _castScreen = null;
+    _scene = GameScene.playing;
+    world.add(PlayScreen(cast: _currentCast, initialCoins: coins));
+    gameFocusNode.requestFocus();
+  }
+
+  void convertDramaToAttribute(Attribute attr) {
+    final level = unlockedTokens[attr] ?? 1;
+    activePusher?.convertDramaToAttribute(attr, level);
   }
 
   void finishShop() {
@@ -186,6 +228,9 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
           overlays.add('showName');
           return KeyEventResult.handled;
         case GameScene.cast:
+          if (overlays.isActive('castCooldown')) {
+            return KeyEventResult.ignored;
+          }
           _scene = GameScene.playing;
           _currentCast = List.of(_castScreen!.cast);
           _castScreen?.removeFromParent();

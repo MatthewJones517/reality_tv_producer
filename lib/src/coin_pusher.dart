@@ -81,6 +81,18 @@ class CoinPusher extends PositionComponent
     return _randomDramaOrAttribute();
   }
 
+  Future<void> convertDramaToAttribute(Attribute attr, int level) async {
+    final dramaTokens =
+        _tokens.where((t) => t.type == TokenType.drama && t.attribute == null);
+    final list = dramaTokens.toList();
+    final count = (list.length / 3).floor();
+    if (count <= 0) return;
+    for (int i = 0; i < count; i++) {
+      final token = list[i];
+      await token.convertToAttribute(attr, level, (p) => game.images.load(p));
+    }
+  }
+
   void _fillQueue() {
     while (tokenQueue.length < queueSize) {
       tokenQueue.insert(0, _randomQueueToken());

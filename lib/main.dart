@@ -1,6 +1,7 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
+import 'src/cast_cooldown_overlay.dart';
 import 'src/game.dart';
 import 'src/game_over_screen.dart';
 import 'src/how_to_play_screen.dart';
@@ -22,6 +23,8 @@ void main() {
                 ShowNameScreen(game: game as RealityTvGame),
             'howToPlay': (context, game) =>
                 HowToPlayScreen(game: game as RealityTvGame),
+            'castCooldown': (context, game) =>
+                CastCooldownOverlay(game: game as RealityTvGame),
             'gameOver': (context, game) =>
                 GameOverScreen(game: game as RealityTvGame),
             'shop': (context, game) =>

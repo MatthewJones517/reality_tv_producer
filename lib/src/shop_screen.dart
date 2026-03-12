@@ -17,11 +17,21 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> {
   static const _pink = Color(0xFFFF1493);
   static const _fontFamily = 'VT323';
-  static const _unlockCost = 75;
+  static int _costForLevel(int currentLevel) {
+    return switch (currentLevel) {
+      0 => 100,
+      1 => 150,
+      2 => 200,
+      _ => 200,
+    };
+  }
 
   late List<Attribute> _options;
   final _random = Random();
   final Set<Attribute> _purchasedThisSession = {};
+  int _rerollCount = 0;
+
+  int get _rerollCost => 5 * (1 << _rerollCount);
 
   @override
   void initState() {
@@ -29,16 +39,21 @@ class _ShopScreenState extends State<ShopScreen> {
     _pickOptions();
   }
 
+  void _rerollShop() {
+    if (widget.game.coins < _rerollCost) return;
+    setState(() {
+      widget.game.coins -= _rerollCost;
+      _rerollCount++;
+      _pickOptions();
+    });
+  }
+
   void _pickOptions() {
     final eligible = <Attribute>[];
     for (final attr in Attribute.values) {
       final level = widget.game.unlockedTokens[attr] ?? 0;
       if (level >= 3) continue;
-      if (level > 0) {
-        eligible.add(attr);
-      } else if (widget.game.unlockedTokens.length < 3) {
-        eligible.add(attr);
-      }
+      eligible.add(attr);
     }
     eligible.shuffle(_random);
     setState(() {
@@ -47,15 +62,19 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   void _purchase(Attribute attr) {
-    if (widget.game.coins < _unlockCost) return;
     final current = widget.game.unlockedTokens[attr] ?? 0;
     if (current >= 3) return;
-    if (current == 0 && widget.game.unlockedTokens.length >= 3) return;
+    final cost = _costForLevel(current);
+    if (widget.game.coins < cost) return;
 
     setState(() {
-      widget.game.coins -= _unlockCost;
+      widget.game.coins -= cost;
+      final isFirstUnlock = current == 0;
       widget.game.unlockedTokens[attr] = current + 1;
       _purchasedThisSession.add(attr);
+      if (isFirstUnlock) {
+        widget.game.convertDramaToAttribute(attr);
+      }
     });
   }
 
@@ -66,6 +85,7 @@ class _ShopScreenState extends State<ShopScreen> {
       child: Center(
         child: Container(
           width: 1200,
+          constraints: const BoxConstraints(maxHeight: 700),
           margin: const EdgeInsets.symmetric(vertical: 24),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
@@ -99,29 +119,41 @@ class _ShopScreenState extends State<ShopScreen> {
                         color: Colors.white,
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: widget.game.coins >= _rerollCost
+                          ? _rerollShop
+                          : null,
+                      child: Text(
+                        'Reroll ($_rerollCost coins)',
+                        style: const TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: 24,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     Wrap(
                       spacing: 24,
                       runSpacing: 24,
                       alignment: WrapAlignment.center,
                       children: _options.map((attr) {
-                        final level =
-                            widget.game.unlockedTokens[attr] ?? 0;
-                        final canUnlock = level == 0 &&
-                            widget.game.unlockedTokens.length < 3;
+                        final level = widget.game.unlockedTokens[attr] ?? 0;
+                        final canUnlock = level == 0;
                         final canLevelUp = level > 0 && level < 3;
-                        final notPurchasedThisSession =
-                            !_purchasedThisSession.contains(attr);
+                        final cost = _costForLevel(level);
+                        final notPurchasedThisSession = !_purchasedThisSession
+                            .contains(attr);
                         final canBuy =
                             notPurchasedThisSession &&
                             (canUnlock || canLevelUp) &&
-                            widget.game.coins >= _unlockCost;
+                            widget.game.coins >= cost;
 
                         final grayedOut = _purchasedThisSession.contains(attr);
                         return _ShopOption(
                           attribute: attr,
                           level: widget.game.unlockedTokens[attr] ?? 0,
-                          cost: _unlockCost,
+                          cost: cost,
                           canBuy: canBuy,
                           isLevelUp: level > 0,
                           grayedOut: grayedOut,
@@ -136,7 +168,9 @@ class _ShopScreenState extends State<ShopScreen> {
                         backgroundColor: _pink,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 48, vertical: 16),
+                          horizontal: 48,
+                          vertical: 16,
+                        ),
                         textStyle: const TextStyle(
                           fontFamily: _fontFamily,
                           fontSize: 36,
@@ -157,9 +191,9 @@ class _ShopScreenState extends State<ShopScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      'Unlocked Chips (${widget.game.unlockedTokens.length}/3)',
-                      style: const TextStyle(
+                    const Text(
+                      'Unlocked Chips',
+                      style: TextStyle(
                         fontFamily: 'CinzelDecorative',
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -167,45 +201,75 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    if (widget.game.unlockedTokens.isEmpty)
-                      Text(
-                        'None yet',
-                        style: TextStyle(
-                          fontFamily: _fontFamily,
-                          fontSize: 28,
-                          color: Colors.white.withValues(alpha: 0.6),
-                        ),
-                      )
-                    else
-                      ...widget.game.unlockedTokens.entries.map(
-                        (e) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                'assets/playfield/${e.key.name[0].toUpperCase()}${e.key.name.substring(1)}_Chip.png',
-                                width: 48,
-                                height: 48,
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) => const SizedBox(
-                                  width: 48,
-                                  height: 48,
+                    SizedBox(
+                      height: 200,
+                      child: Scrollbar(
+                        child: ListView(
+                          shrinkWrap: true,
+                          children: [
+                            if (widget.game.unlockedTokens.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Text(
+                                  'None yet',
+                                  style: TextStyle(
+                                    fontFamily: _fontFamily,
+                                    fontSize: 28,
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              )
+                            else
+                              ...widget.game.unlockedTokens.entries.map(
+                                (e) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.asset(
+                                        'assets/playfield/${e.key.name[0].toUpperCase()}${e.key.name.substring(1)}_Chip.png',
+                                        width: 48,
+                                        height: 48,
+                                        fit: BoxFit.contain,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const SizedBox(
+                                                  width: 48,
+                                                  height: 48,
+                                                ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        '${e.key.label} Lv.${e.value}',
+                                        style: const TextStyle(
+                                          fontFamily: _fontFamily,
+                                          fontSize: 28,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Text(
-                                '${e.key.label} Lv.${e.value}',
-                                style: const TextStyle(
-                                  fontFamily: _fontFamily,
-                                  fontSize: 28,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        'Attribute chips give you an additional ratings boost '
+                        'for each character with the matching attribute',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: 22,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -255,51 +319,52 @@ class _ShopOption extends StatelessWidget {
           ),
         ),
         child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Image.asset(
-            'assets/playfield/${attribute.name[0].toUpperCase()}${attribute.name.substring(1)}_Chip.png',
-            width: 80,
-            height: 80,
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => const SizedBox(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/playfield/${attribute.name[0].toUpperCase()}${attribute.name.substring(1)}_Chip.png',
               width: 80,
               height: 80,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox(width: 80, height: 80),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            attribute.label,
-            style: const TextStyle(
-              fontFamily: _fontFamily,
-              fontSize: 24,
-              color: Colors.white,
-            ),
-          ),
-          if (level > 0)
+            const SizedBox(height: 8),
             Text(
-              'Level $level',
-              style: TextStyle(
+              attribute.label,
+              style: const TextStyle(
                 fontFamily: _fontFamily,
-                fontSize: 20,
-                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 24,
+                color: Colors.white,
               ),
             ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: canBuy ? onPurchase : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _pink,
-              disabledBackgroundColor: Colors.grey,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            if (level > 0)
+              Text(
+                'Level $level',
+                style: TextStyle(
+                  fontFamily: _fontFamily,
+                  fontSize: 20,
+                  color: Colors.white.withValues(alpha: 0.7),
+                ),
+              ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: canBuy ? onPurchase : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _pink,
+                disabledBackgroundColor: Colors.grey,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+              ),
+              child: Text(
+                isLevelUp ? 'Level up ($cost)' : 'Unlock ($cost)',
+                style: const TextStyle(fontFamily: _fontFamily, fontSize: 22),
+              ),
             ),
-            child: Text(
-              isLevelUp ? 'Level up ($cost)' : 'Unlock ($cost)',
-              style: const TextStyle(fontFamily: _fontFamily, fontSize: 22),
-            ),
-          ),
-        ],
+          ],
         ),
       ),
     );
