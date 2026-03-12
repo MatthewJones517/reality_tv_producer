@@ -62,7 +62,7 @@ class HowToPlayScreen extends StatelessWidget {
                   _buildInfoLine(
                     Icons.gamepad_rounded,
                     Colors.lightBlueAccent,
-                    'Space to shoot. A / Up arrow to aim up, D / Down arrow to aim down.',
+                    'Space to shoot. A / Up and D / Down to aim.',
                   ),
                   const SizedBox(height: 24),
                   _buildTokenRow(
