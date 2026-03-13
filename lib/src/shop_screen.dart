@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'character.dart';
 import 'game.dart';
+import 'perk.dart';
 
 class ShopScreen extends StatefulWidget {
   final RealityTvGame game;
@@ -27,8 +28,10 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   late List<Attribute> _options;
+  late List<Perk> _perkOptions;
   final _random = Random();
   final Set<Attribute> _purchasedThisSession = {};
+  static const _perkCost = 200;
   final _unlockedScrollController = ScrollController();
 
   @override
@@ -56,8 +59,23 @@ class _ShopScreenState extends State<ShopScreen> {
       eligible.add(attr);
     }
     eligible.shuffle(_random);
+    final eligiblePerks = Perk.values
+        .where((p) => !widget.game.ownedPerks.contains(p))
+        .toList()
+      ..shuffle(_random);
     setState(() {
       _options = eligible.take(3).toList();
+      _perkOptions = eligiblePerks.take(3).toList();
+    });
+  }
+
+  void _purchasePerk(Perk perk) {
+    if (widget.game.coins < _perkCost) return;
+    if (widget.game.ownedPerks.contains(perk)) return;
+    setState(() {
+      widget.game.coins -= _perkCost;
+      widget.game.ownedPerks.add(perk);
+      _pickOptions();
     });
   }
 
@@ -128,7 +146,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                   fontWeight: FontWeight.bold,
                                   color: _pink,
                                 ),
-                            ),
+                              ),
                             ),
                           ),
                         ),
@@ -167,6 +185,73 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                       ],
                     ),
+                    if (_perkOptions.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Perks',
+                        style: const TextStyle(
+                          fontFamily: 'CinzelDecorative',
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: _pink,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.center,
+                        children: _perkOptions.map((perk) {
+                          final canBuy = widget.game.coins >= _perkCost;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  perk.label,
+                                  style: const TextStyle(
+                                    fontFamily: _fontFamily,
+                                    fontSize: 24,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: canBuy
+                                      ? () => _purchasePerk(perk)
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _pink,
+                                    disabledBackgroundColor: Colors.grey,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    textStyle: const TextStyle(
+                                      fontFamily: _fontFamily,
+                                      fontSize: 22,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text('Buy ('),
+                                      Image.asset(
+                                        'assets/playfield/coin.png',
+                                        width: 20,
+                                        height: 20,
+                                        fit: BoxFit.contain,
+                                      ),
+                                      Text(' $_perkCost)'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     Transform.translate(
                       offset: const Offset(-24, 0),

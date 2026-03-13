@@ -8,6 +8,7 @@ import 'cast_screen.dart';
 import 'character.dart';
 import 'character_generator.dart';
 import 'coin_pusher.dart';
+import 'perk.dart';
 import 'play_screen.dart';
 import 'title_screen.dart';
 
@@ -34,10 +35,19 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   double _episodeTimer = 0;
   int coins = 0;
   final Map<Attribute, int> unlockedTokens = {};
+  final Set<Perk> ownedPerks = {};
   CastScreen? _castScreen;
   List<Character> _currentCast = [];
   List<Character> get currentCast => _currentCast;
   CoinPusher? activePusher;
+
+  String? perkFlashName;
+  double perkFlashTimer = 0;
+
+  void showPerkFlash(String name) {
+    perkFlashName = name;
+    perkFlashTimer = 1.0;
+  }
 
   @override
   Color backgroundColor() => const Color(0xFF000000);
@@ -173,7 +183,10 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     _episodeTimer = 0;
     coins = 0;
     unlockedTokens.clear();
+    ownedPerks.clear();
     _rerollCount = 0;
+    perkFlashName = null;
+    perkFlashTimer = 0;
     _currentCast = [];
     activePusher = null;
     resumeEngine();
@@ -182,6 +195,10 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   @override
   void update(double dt) {
     super.update(dt);
+    if (perkFlashTimer > 0) {
+      perkFlashTimer -= dt;
+      if (perkFlashTimer <= 0) perkFlashName = null;
+    }
     if (_scene == GameScene.playing && activePusher != null) {
       _episodeTimer += dt;
       while (_episodeTimer >= 10) {
@@ -216,6 +233,11 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
           keys.contains(LogicalKeyboardKey.arrowUp)) {
         activePusher!.rotateLauncherDown(dt);
       }
+      if (ownedPerks.contains(Perk.rapidAutoFire) &&
+          HardwareKeyboard.instance.logicalKeysPressed
+              .contains(LogicalKeyboardKey.space)) {
+        activePusher!.shoot();
+      }
     }
   }
 
@@ -241,7 +263,9 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
           world.add(PlayScreen(cast: _currentCast, initialCoins: coins));
           return KeyEventResult.handled;
         case GameScene.playing:
-          activePusher?.shoot();
+          if (!ownedPerks.contains(Perk.rapidAutoFire)) {
+            activePusher?.shoot();
+          }
           return KeyEventResult.handled;
         default:
           break;

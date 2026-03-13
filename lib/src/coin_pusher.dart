@@ -7,6 +7,7 @@ import 'package:forge2d/forge2d.dart' as f2d;
 
 import 'character.dart';
 import 'game.dart';
+import 'perk.dart';
 import 'pusher_body.dart';
 import 'token_body.dart';
 
@@ -241,20 +242,96 @@ class CoinPusher extends PositionComponent
     }
   }
 
+  /// Returns (extra match count from doubler perks, perk to flash if any).
+  (int, Perk?) _attributeDoublerBonus(Attribute tokenAttr) {
+    var extra = 0;
+    Perk? flash;
+    final cast = game.currentCast;
+    int count(Attribute a) => cast.where((c) => c.attributes.contains(a)).length;
+
+    if (game.ownedPerks.contains(Perk.doubleThreat) && tokenAttr == Attribute.charming) {
+      final n = count(Attribute.flirty);
+      extra += n;
+      if (n > 0) flash ??= Perk.doubleThreat;
+    }
+    if ((game.ownedPerks.contains(Perk.loveTriangle) ||
+            game.ownedPerks.contains(Perk.theFeelingIsMutual)) &&
+        tokenAttr == Attribute.flirty) {
+      final n = count(Attribute.jealous);
+      extra += n;
+      if (n > 0) {
+        flash ??= game.ownedPerks.contains(Perk.theFeelingIsMutual)
+            ? Perk.theFeelingIsMutual
+            : Perk.loveTriangle;
+      }
+    }
+    if (game.ownedPerks.contains(Perk.theFeelingIsMutual) &&
+        tokenAttr == Attribute.jealous) {
+      final n = count(Attribute.flirty);
+      extra += n;
+      if (n > 0) flash ??= Perk.theFeelingIsMutual;
+    }
+    if (game.ownedPerks.contains(Perk.tooEasy) && tokenAttr == Attribute.oblivious) {
+      final n = count(Attribute.scheming);
+      extra += n;
+      if (n > 0) flash ??= Perk.tooEasy;
+    }
+    if (game.ownedPerks.contains(Perk.didYouHearAbout) && tokenAttr == Attribute.nosy) {
+      final n = count(Attribute.chatty);
+      extra += n;
+      if (n > 0) flash ??= Perk.didYouHearAbout;
+    }
+    if (game.ownedPerks.contains(Perk.theMole) && tokenAttr == Attribute.scheming) {
+      final n = count(Attribute.loyal);
+      extra += n;
+      if (n > 0) flash ??= Perk.theMole;
+    }
+    if (game.ownedPerks.contains(Perk.theyreDefinitelyOntoMe) && tokenAttr == Attribute.oblivious) {
+      final n = count(Attribute.paranoid);
+      extra += n;
+      if (n > 0) flash ??= Perk.theyreDefinitelyOntoMe;
+    }
+    if (game.ownedPerks.contains(Perk.crickets) && tokenAttr == Attribute.stoic) {
+      final n = count(Attribute.chatty);
+      extra += n;
+      if (n > 0) flash ??= Perk.crickets;
+    }
+    return (extra, flash);
+  }
+
   void onTokenHitDropZone(TokenBody token) {
     if (!token.collected) {
       token.collected = true;
       if (token.type == TokenType.coin) {
-        // Handled in update (coinsCollected)
+        if (game.ownedPerks.contains(Perk.marketingBudget)) {
+          health = (health + 0.5).clamp(0, 100);
+        }
       } else if (token.isAttributeToken && token.attribute != null) {
         final matchCount = game.currentCast
             .where((c) => c.attributes.contains(token.attribute))
             .length;
         final perChar = token.attributeLevel;
-        final multiplier = 1 + matchCount * perChar;
-        health = (health + 5 * multiplier).clamp(0, 100);
+        final (doublerCount, flashPerk) = _attributeDoublerBonus(token.attribute!);
+        final effectiveMatch = matchCount + doublerCount;
+        final multiplier = 1 + effectiveMatch * perChar;
+        var gain = 5.0 * multiplier;
+        if (flashPerk != null) {
+          game.showPerkFlash(flashPerk.label);
+        }
+        if (game.ownedPerks.contains(Perk.memeLord) &&
+            _random.nextDouble() < 0.05) {
+          gain *= 10;
+          if (flashPerk == null) game.showPerkFlash(Perk.memeLord.label);
+        }
+        health = (health + gain).clamp(0, 100);
       } else {
-        health = (health + 5).clamp(0, 100);
+        var gain = 5.0;
+        if (game.ownedPerks.contains(Perk.memeLord) &&
+            _random.nextDouble() < 0.05) {
+          gain *= 10;
+          game.showPerkFlash(Perk.memeLord.label);
+        }
+        health = (health + gain).clamp(0, 100);
       }
       _pendingRemoval.add(token);
     }
@@ -381,7 +458,11 @@ class CoinPusher extends PositionComponent
       skillStopCharge = (skillStopCharge - dt / 5).clamp(0.0, 1.0);
       _pusher?.setFrozen(true);
     } else {
-      skillStopCharge = (skillStopCharge + dt / 10).clamp(0.0, 1.0);
+      final rechargeRate = game.ownedPerks.contains(Perk.skillStopRecharge)
+          ? 4 / 10
+          : 1 / 10;
+      skillStopCharge =
+          (skillStopCharge + dt * rechargeRate).clamp(0.0, 1.0);
       _pusher?.setFrozen(false);
     }
     health = (health - dt * 3).clamp(0, 100);

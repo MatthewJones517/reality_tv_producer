@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
@@ -172,6 +173,42 @@ class PlayScreen extends PositionComponent
       coinPusher: coinPusher,
       position: Vector2(20 + queueWidth + 24, 1080 - _bottomBarHeight / 2),
     ));
+
+    add(_PerkFlashDisplay(game: game)
+      ..position = Vector2(960, 540)
+      ..anchor = Anchor.center
+      ..priority = 200);
+  }
+}
+
+class _PerkFlashDisplay extends PositionComponent {
+  _PerkFlashDisplay({required this.game});
+
+  final RealityTvGame game;
+
+  static const _pink = Color(0xFFFF1493);
+  static const _yellow = Color(0xFFFFFF00);
+
+  @override
+  void render(ui.Canvas canvas) {
+    final name = game.perkFlashName;
+    if (name == null || game.perkFlashTimer <= 0) return;
+    final t = (math.sin(game.perkFlashTimer * 10) + 1) / 2;
+    final color = Color.lerp(_pink, _yellow, t)!;
+    final textPaint = TextPaint(
+      style: TextStyle(
+        fontFamily: 'VT323',
+        fontSize: 48,
+        color: color,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+    textPaint.render(
+      canvas,
+      name,
+      Vector2.zero(),
+      anchor: Anchor.center,
+    );
   }
 }
 
