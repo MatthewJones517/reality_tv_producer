@@ -331,19 +331,14 @@ class CoinPusher extends PositionComponent
             .where((c) => c.attributes.contains(token.attribute))
             .length;
         final perChar = token.attributeLevel;
-        final (doublerCount, flashPerk) = _attributeDoublerBonus(
-          token.attribute!,
-        );
+        final (doublerCount, _) = _attributeDoublerBonus(token.attribute!);
         final effectiveMatch = matchCount + doublerCount;
         final multiplier = 1 + effectiveMatch * perChar;
         var gain = 5.0 * multiplier;
-        if (flashPerk != null) {
-          game.showPerkFlash(flashPerk.label);
-        }
         if (game.ownedPerks.contains(Perk.memeLord) &&
             _random.nextDouble() < 0.05) {
           gain *= 10;
-          if (flashPerk == null) game.showPerkFlash(Perk.memeLord.label);
+          game.showPerkFlash(Perk.memeLord.label, duration: 3.0);
         }
         health = (health + gain).clamp(0, 100);
       } else {
@@ -351,7 +346,7 @@ class CoinPusher extends PositionComponent
         if (game.ownedPerks.contains(Perk.memeLord) &&
             _random.nextDouble() < 0.05) {
           gain *= 10;
-          game.showPerkFlash(Perk.memeLord.label);
+          game.showPerkFlash(Perk.memeLord.label, duration: 3.0);
         }
         health = (health + gain).clamp(0, 100);
       }

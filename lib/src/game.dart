@@ -44,9 +44,9 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   String? perkFlashName;
   double perkFlashTimer = 0;
 
-  void showPerkFlash(String name) {
+  void showPerkFlash(String name, {double duration = 1.0}) {
     perkFlashName = name;
-    perkFlashTimer = 1.0;
+    perkFlashTimer = duration;
   }
 
   @override

@@ -201,6 +201,8 @@ class _PerkFlashDisplay extends PositionComponent {
 
   static const _pink = Color(0xFFFF1493);
   static const _yellow = Color(0xFFFFFF00);
+  static const _fontSize = 96.0;
+  static const _strokeWidth = 6.0;
 
   @override
   void render(ui.Canvas canvas) {
@@ -208,20 +210,28 @@ class _PerkFlashDisplay extends PositionComponent {
     if (name == null || game.perkFlashTimer <= 0) return;
     final t = (math.sin(game.perkFlashTimer * 10) + 1) / 2;
     final color = Color.lerp(_pink, _yellow, t)!;
-    final textPaint = TextPaint(
+
+    final strokePaint = TextPaint(
       style: TextStyle(
         fontFamily: 'VT323',
-        fontSize: 48,
+        fontSize: _fontSize,
+        fontWeight: FontWeight.bold,
+        foreground: Paint()
+          ..style = ui.PaintingStyle.stroke
+          ..strokeWidth = _strokeWidth
+          ..color = const Color(0xFF000000),
+      ),
+    );
+    final fillPaint = TextPaint(
+      style: TextStyle(
+        fontFamily: 'VT323',
+        fontSize: _fontSize,
         color: color,
         fontWeight: FontWeight.bold,
       ),
     );
-    textPaint.render(
-      canvas,
-      name,
-      Vector2.zero(),
-      anchor: Anchor.center,
-    );
+    strokePaint.render(canvas, name, Vector2.zero(), anchor: Anchor.center);
+    fillPaint.render(canvas, name, Vector2.zero(), anchor: Anchor.center);
   }
 }
 
