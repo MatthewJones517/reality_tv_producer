@@ -53,7 +53,8 @@ enum Perk {
         'Both are watching each other. Neither knows why. Nosy and Paranoid characters double ratings for each other.',
     Perk.crickets:
         'One talks. One stares. America is obsessed. Chatty characters double the ratings from Stoic tokens.',
-    Perk.memeLord: '5% chance to 10x a token’s ratings value when it falls.',
+    Perk.memeLord:
+        'You\'re on TikTok! 5% chance to 10x a token’s ratings value when it falls.',
   };
 
   String get description => descriptions[this]!;
