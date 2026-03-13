@@ -206,6 +206,8 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
       }
 
       final keys = HardwareKeyboard.instance.logicalKeysPressed;
+      activePusher!.skillStopPressed =
+          keys.contains(LogicalKeyboardKey.keyS);
       if (keys.contains(LogicalKeyboardKey.keyD) ||
           keys.contains(LogicalKeyboardKey.arrowDown)) {
         activePusher!.rotateLauncherUp(dt);

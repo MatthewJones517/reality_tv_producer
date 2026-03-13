@@ -16,6 +16,9 @@ class PusherBody extends PositionComponent {
 
   bool _movingRight = true;
   bool hasCompletedFirstPush = false;
+  bool _frozen = false;
+
+  void setFrozen(bool frozen) => _frozen = frozen;
 
   PusherBody({
     required this.body,
@@ -33,15 +36,20 @@ class PusherBody extends PositionComponent {
 
   @override
   void update(double dt) {
-    final posX = body.position.x / physScale;
-
-    if (_movingRight && posX >= startX + pushDistance) {
-      _movingRight = false;
-      hasCompletedFirstPush = true;
-      body.linearVelocity = f2d.Vector2(-pushSpeed, 0);
-    } else if (!_movingRight && posX <= startX) {
-      _movingRight = true;
-      body.linearVelocity = f2d.Vector2(pushSpeed, 0);
+    if (_frozen) {
+      body.linearVelocity = f2d.Vector2.zero();
+    } else {
+      final posX = body.position.x / physScale;
+      if (_movingRight && posX >= startX + pushDistance) {
+        _movingRight = false;
+        hasCompletedFirstPush = true;
+        body.linearVelocity = f2d.Vector2(-pushSpeed, 0);
+      } else if (!_movingRight && posX <= startX) {
+        _movingRight = true;
+        body.linearVelocity = f2d.Vector2(pushSpeed, 0);
+      } else if (body.linearVelocity.length2 < 0.001) {
+        body.linearVelocity = f2d.Vector2(_movingRight ? pushSpeed : -pushSpeed, 0);
+      }
     }
 
     final pos = body.position;

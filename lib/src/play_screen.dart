@@ -166,6 +166,12 @@ class PlayScreen extends PositionComponent
       coinPusher: coinPusher,
       position: Vector2(20, 1080 - _bottomBarHeight / 2),
     ));
+
+    const queueWidth = 6 * (50 + 8);
+    add(_SkillStopMeterDisplay(
+      coinPusher: coinPusher,
+      position: Vector2(20 + queueWidth + 24, 1080 - _bottomBarHeight / 2),
+    ));
   }
 }
 
@@ -387,6 +393,41 @@ class _ShowInfoDisplay extends PositionComponent {
       Vector2(textRight, 0),
       anchor: Anchor.centerRight,
     );
+  }
+}
+
+class _SkillStopMeterDisplay extends PositionComponent {
+  static const _barWidth = 160.0;
+  static const _barHeight = 40.0;
+
+  final CoinPusher coinPusher;
+
+  _SkillStopMeterDisplay({
+    required this.coinPusher,
+    required super.position,
+  }) {
+    anchor = Anchor.centerLeft;
+  }
+
+  @override
+  void render(ui.Canvas canvas) {
+    final charge = coinPusher.skillStopCharge.clamp(0.0, 1.0);
+    final barRect = ui.Rect.fromLTWH(0, -_barHeight / 2, _barWidth, _barHeight);
+    final radius = ui.Radius.circular(_barHeight / 2);
+
+    canvas.drawRRect(
+      ui.RRect.fromRectAndRadius(barRect, radius),
+      ui.Paint()..color = const ui.Color(0xFF333333),
+    );
+
+    if (charge > 0) {
+      final fillWidth = _barWidth * charge;
+      final fillRect = ui.Rect.fromLTWH(0, -_barHeight / 2, fillWidth, _barHeight);
+      canvas.drawRRect(
+        ui.RRect.fromRectAndRadius(fillRect, radius),
+        ui.Paint()..color = const ui.Color(0xFF87CEEB),
+      );
+    }
   }
 }
 
