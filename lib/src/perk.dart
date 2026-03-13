@@ -1,3 +1,5 @@
+import 'character.dart';
+
 enum Perk {
   skillStopRecharge,
   rapidAutoFire,
@@ -57,4 +59,24 @@ enum Perk {
   };
 
   String get description => descriptions[this]!;
+
+  /// Token attributes that must be unlocked for this perk to have any effect.
+  /// Empty means the perk works without any token purchases.
+  static const requiredTokens = <Perk, List<Attribute>>{
+    Perk.doubleThreat: [Attribute.charming],
+    Perk.loveTriangle: [Attribute.flirty],
+    Perk.tooEasy: [Attribute.oblivious],
+    Perk.didYouHearAbout: [Attribute.nosy],
+    Perk.theMole: [Attribute.scheming],
+    Perk.theyreDefinitelyOntoMe: [Attribute.oblivious],
+    Perk.theFeelingIsMutual: [Attribute.flirty, Attribute.jealous],
+    Perk.crickets: [Attribute.stoic],
+  };
+
+  /// Returns true if this perk can be offered (all required tokens are unlocked).
+  static bool isEligible(Perk perk, Map<Attribute, int> unlockedTokens) {
+    final required = requiredTokens[perk];
+    if (required == null || required.isEmpty) return true;
+    return required.every((attr) => (unlockedTokens[attr] ?? 0) > 0);
+  }
 }

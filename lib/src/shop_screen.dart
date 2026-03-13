@@ -62,9 +62,12 @@ class _ShopScreenState extends State<ShopScreen> {
       eligible.add(attr);
     }
     eligible.shuffle(_random);
-    final eligiblePerks =
-        Perk.values.where((p) => !widget.game.ownedPerks.contains(p)).toList()
-          ..shuffle(_random);
+    final unlocked = widget.game.unlockedTokens;
+    final eligiblePerks = Perk.values
+        .where((p) =>
+            !widget.game.ownedPerks.contains(p) && Perk.isEligible(p, unlocked))
+        .toList()
+      ..shuffle(_random);
     setState(() {
       _options = eligible.take(3).toList();
       _perkOptions = eligiblePerks.take(3).toList();

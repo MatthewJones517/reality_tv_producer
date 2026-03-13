@@ -236,7 +236,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
       if (ownedPerks.contains(Perk.rapidAutoFire) &&
           HardwareKeyboard.instance.logicalKeysPressed
               .contains(LogicalKeyboardKey.space)) {
-        activePusher!.shoot();
+        activePusher!.shootRapidFire();
       }
     }
   }
@@ -246,6 +246,12 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     KeyEvent event,
     Set<LogicalKeyboardKey> keysPressed,
   ) {
+    if (event is KeyUpEvent &&
+        event.logicalKey == LogicalKeyboardKey.space &&
+        _scene == GameScene.playing &&
+        ownedPerks.contains(Perk.rapidAutoFire)) {
+      activePusher?.resetRapidFireBurst();
+    }
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
       switch (_scene) {
         case GameScene.title:

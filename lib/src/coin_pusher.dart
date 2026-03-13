@@ -46,7 +46,7 @@ class CoinPusher extends PositionComponent
   ui.Image? tvImage;
   final Map<Attribute, ui.Image> _attributeImages = {};
 
-  static const _fireCooldown = 0.05;
+  static const _fireCooldown = 0.15;
 
   final List<TokenBody> _pendingRemoval = [];
   final List<QueueToken> tokenQueue = [];
@@ -58,6 +58,16 @@ class CoinPusher extends PositionComponent
   /// 0..1; drains while skill stop held (5s max), recharges in 10s from empty
   double skillStopCharge = 1.0;
   bool skillStopPressed = false;
+
+  /// Rapid auto fire: shots remaining in current burst. Resets to 10 on space release.
+  int _rapidFireBurstRemaining = 10;
+
+  /// 0..1; full when burst is ready, depletes as shots are fired.
+  double get rapidFireBurstFraction => _rapidFireBurstRemaining / 10.0;
+
+  void resetRapidFireBurst() {
+    _rapidFireBurstRemaining = 10;
+  }
 
   CoinPusher({int initialCoins = 0}) {
     size = Vector2(fieldWidth, fieldHeight);
@@ -414,6 +424,16 @@ class CoinPusher extends PositionComponent
     }
   }
 
+  /// Rapid auto fire: shoots only if burst has shots remaining. Decrements on fire.
+  void shootRapidFire() {
+    if (_rapidFireBurstRemaining <= 0) return;
+    if (!launcherBlocked && _launcherCooldown <= 0) {
+      _rapidFireBurstRemaining--;
+      _launcherCooldown = _fireCooldown;
+      _shootAt(launcherPosition.x, launcherPosition.y, launcherAngle);
+    }
+  }
+
   Future<void> _shootAt(double originX, double originY, double angle) async {
     if (tokenQueue.isEmpty) return;
     final queueToken = tokenQueue.removeLast();
@@ -466,7 +486,8 @@ class CoinPusher extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    final shouldFreeze = skillStopPressed &&
+    final shouldFreeze =
+        skillStopPressed &&
         skillStopCharge > 0 &&
         (_pusher?.hasCompletedFirstPush ?? false);
     if (shouldFreeze) {
