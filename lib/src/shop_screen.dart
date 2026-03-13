@@ -228,6 +228,7 @@ class _ShopScreenState extends State<ShopScreen> {
                           thumbVisibility: true,
                         child: ListView(
                           controller: _unlockedScrollController,
+                          padding: const EdgeInsets.only(left: 24, right: 16),
                           children: [
                             if (widget.game.unlockedTokens.isEmpty)
                               Center(
@@ -249,20 +250,24 @@ class _ShopScreenState extends State<ShopScreen> {
                                 (e) => Padding(
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
                                     children: [
-                                      Image.asset(
-                                        'assets/playfield/${e.key.name[0].toUpperCase()}${e.key.name.substring(1)}_Chip.png',
+                                      SizedBox(
                                         width: 48,
                                         height: 48,
-                                        fit: BoxFit.contain,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                const SizedBox(
-                                                  width: 48,
-                                                  height: 48,
-                                                ),
+                                        child: Image.asset(
+                                          'assets/playfield/${e.key.name[0].toUpperCase()}${e.key.name.substring(1)}_Chip.png',
+                                          width: 48,
+                                          height: 48,
+                                          fit: BoxFit.contain,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  const SizedBox(
+                                                    width: 48,
+                                                    height: 48,
+                                                  ),
+                                        ),
                                       ),
                                       const SizedBox(width: 12),
                                       Text(

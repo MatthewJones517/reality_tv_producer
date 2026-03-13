@@ -76,8 +76,8 @@ class _WinScreenState extends State<WinScreen> {
                   textAlign: TextAlign.center,
                   TextSpan(
                     children: [
-                      const TextSpan(
-                        text: 'Congratulations',
+                      TextSpan(
+                        text: 'Congratulations!\n',
                         style: TextStyle(
                           fontFamily: 'CinzelDecorative',
                           fontSize: 48,
@@ -86,11 +86,12 @@ class _WinScreenState extends State<WinScreen> {
                         ),
                       ),
                       TextSpan(
-                        text: '! ${widget.game.showName ?? "Your show"} has reached syndication! You win! Can you do it again?',
-                        style: const TextStyle(
+                        text:
+                            '${widget.game.showName ?? "Your show"} has reached syndication! You win! Can you do it again?',
+                        style: TextStyle(
                           fontFamily: _fontFamily,
                           fontSize: 42,
-                          color: _pink,
+                          color: Colors.white.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
