@@ -466,7 +466,9 @@ class CoinPusher extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    final shouldFreeze = skillStopPressed && skillStopCharge > 0;
+    final shouldFreeze = skillStopPressed &&
+        skillStopCharge > 0 &&
+        (_pusher?.hasCompletedFirstPush ?? false);
     if (shouldFreeze) {
       skillStopCharge = (skillStopCharge - dt / 5).clamp(0.0, 1.0);
       _pusher?.setFrozen(true);
