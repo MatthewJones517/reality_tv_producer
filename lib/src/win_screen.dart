@@ -72,14 +72,28 @@ class _WinScreenState extends State<WinScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  'Congratulations! ${widget.game.showName ?? "Your show"} has reached syndication! You win! Can you do it again?',
+                Text.rich(
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: 'CinzelDecorative',
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: _pink,
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'Congratulations',
+                        style: TextStyle(
+                          fontFamily: 'CinzelDecorative',
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: _pink,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '! ${widget.game.showName ?? "Your show"} has reached syndication! You win! Can you do it again?',
+                        style: const TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: 42,
+                          color: _pink,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 36),
