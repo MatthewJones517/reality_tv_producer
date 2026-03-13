@@ -268,20 +268,21 @@ class CoinPusher extends PositionComponent
       extra += n;
       if (n > 0) flash ??= Perk.doubleThreat;
     }
-    if ((game.ownedPerks.contains(Perk.loveTriangle) ||
-            game.ownedPerks.contains(Perk.theFeelingIsMutual)) &&
+    if (game.ownedPerks.contains(Perk.loveTriangle) &&
         tokenAttr == Attribute.flirty) {
       final n = count(Attribute.jealous);
       extra += n;
-      if (n > 0) {
-        flash ??= game.ownedPerks.contains(Perk.theFeelingIsMutual)
-            ? Perk.theFeelingIsMutual
-            : Perk.loveTriangle;
-      }
+      if (n > 0) flash ??= Perk.loveTriangle;
     }
     if (game.ownedPerks.contains(Perk.theFeelingIsMutual) &&
-        tokenAttr == Attribute.jealous) {
-      final n = count(Attribute.flirty);
+        tokenAttr == Attribute.paranoid) {
+      final n = count(Attribute.nosy);
+      extra += n;
+      if (n > 0) flash ??= Perk.theFeelingIsMutual;
+    }
+    if (game.ownedPerks.contains(Perk.theFeelingIsMutual) &&
+        tokenAttr == Attribute.nosy) {
+      final n = count(Attribute.paranoid);
       extra += n;
       if (n > 0) flash ??= Perk.theFeelingIsMutual;
     }
