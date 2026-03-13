@@ -85,7 +85,7 @@ class _ShopScreenState extends State<ShopScreen> {
       child: Center(
         child: Container(
           width: 1200,
-          constraints: const BoxConstraints(maxHeight: 700),
+          constraints: const BoxConstraints(maxHeight: 550),
           margin: const EdgeInsets.symmetric(vertical: 24),
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
@@ -93,7 +93,11 @@ class _ShopScreenState extends State<ShopScreen> {
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: _pink, width: 3),
           ),
-          child: Row(
+          child: SingleChildScrollView(
+            child: SizedBox(
+              width: 1200,
+              height: 700,
+              child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
@@ -102,58 +106,74 @@ class _ShopScreenState extends State<ShopScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      'Shop',
-                      style: const TextStyle(
-                        fontFamily: 'CinzelDecorative',
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: _pink,
-                      ),
-                    ),
-                    Text(
-                      'Coins: ${widget.game.coins}',
-                      style: const TextStyle(
-                        fontFamily: _fontFamily,
-                        fontSize: 32,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: widget.game.coins >= widget.game.rerollCost
-                          ? _rerollShop
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _pink,
-                        disabledBackgroundColor: Colors.grey,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 12),
-                        textStyle: const TextStyle(
-                          fontFamily: _fontFamily,
-                          fontSize: 24,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('Reroll ('),
-                          Image.asset(
-                            'assets/playfield/coin.png',
-                            width: 24,
-                            height: 24,
-                            fit: BoxFit.contain,
+                    Row(
+                      children: [
+                        Text(
+                          'Coins: ${widget.game.coins}',
+                          style: const TextStyle(
+                            fontFamily: _fontFamily,
+                            fontSize: 32,
+                            color: Colors.white,
                           ),
-                          Text(' ${widget.game.rerollCost})'),
-                        ],
-                      ),
+                        ),
+                        Expanded(
+                          child: Center(
+                            child: Transform.translate(
+                              offset: const Offset(8, 0),
+                              child: const Text(
+                                'Shop',
+                                style: const TextStyle(
+                                  fontFamily: 'CinzelDecorative',
+                                  fontSize: 48,
+                                  fontWeight: FontWeight.bold,
+                                  color: _pink,
+                                ),
+                            ),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 16),
+                          child: ElevatedButton(
+                            onPressed:
+                                widget.game.coins >= widget.game.rerollCost
+                                    ? _rerollShop
+                                    : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _pink,
+                            disabledBackgroundColor: Colors.grey,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                            textStyle: const TextStyle(
+                              fontFamily: _fontFamily,
+                              fontSize: 24,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('Reroll ('),
+                              Image.asset(
+                                'assets/playfield/coin.png',
+                                width: 24,
+                                height: 24,
+                                fit: BoxFit.contain,
+                              ),
+                              Text(' ${widget.game.rerollCost})'),
+                            ],
+                          ),
+                        ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
-                    Wrap(
-                      spacing: 24,
-                      runSpacing: 24,
-                      alignment: WrapAlignment.center,
+                    Transform.translate(
+                      offset: const Offset(-24, 0),
+                      child: Wrap(
+                        spacing: 24,
+                        runSpacing: 24,
+                        alignment: WrapAlignment.center,
                       children: _options.map((attr) {
                         final level = widget.game.unlockedTokens[attr] ?? 0;
                         final canUnlock = level == 0;
@@ -176,7 +196,8 @@ class _ShopScreenState extends State<ShopScreen> {
                           grayedOut: grayedOut,
                           onPurchase: () => _purchase(attr),
                         );
-                      }).toList(),
+                      }                        ).toList(),
+                      ),
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(
@@ -231,17 +252,18 @@ class _ShopScreenState extends State<ShopScreen> {
                           padding: const EdgeInsets.only(left: 24, right: 16),
                           children: [
                             if (widget.game.unlockedTokens.isEmpty)
-                              Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Text(
-                                    'None yet',
-                                    style: TextStyle(
-                                      fontFamily: _fontFamily,
-                                      fontSize: 28,
-                                      color:
-                                          Colors.white.withValues(alpha: 0.6),
-                                    ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24),
+                                child: Text(
+                                  'Attribute chips give you an additional '
+                                  'ratings boost for each character with the '
+                                  'matching attribute',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: _fontFamily,
+                                    fontSize: 22,
+                                    color: Colors.white.withValues(alpha: 0.7),
                                   ),
                                 ),
                               )
@@ -287,24 +309,12 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                     ),
                     ),
-                    const SizedBox(height: 16),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Text(
-                        'Attribute chips give you an additional ratings boost '
-                        'for each character with the matching attribute',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: _fontFamily,
-                          fontSize: 22,
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
             ],
+          ),
+            ),
           ),
         ),
       ),
