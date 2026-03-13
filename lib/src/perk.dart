@@ -32,30 +32,28 @@ enum Perk {
   String get label => labels[this]!;
 
   static const descriptions = {
-    Perk.skillStopRecharge:
-        'Skill stop meter recharges four times faster.',
+    Perk.skillStopRecharge: 'Skill stop meter recharges four times faster.',
     Perk.rapidAutoFire:
-        'Holding down space enables rapid fire.',
+        'Holding down space enables rapid fire for a short period.',
     Perk.doubleThreat:
-        'Flirty characters double the ratings from Charming tokens.',
+        'Two people work the room at the same time. Flirty characters double the ratings from Charming tokens.',
     Perk.loveTriangle:
-        'Jealous characters double the ratings from Flirty tokens.',
+        'Someone\'s making moves and someone else noticed. Jealous characters double the ratings from Flirty tokens.',
     Perk.tooEasy:
-        'Scheming characters double the ratings from Oblivious tokens.',
+        'The perfect target has been selected. Scheming characters double the ratings from Oblivious tokens.',
     Perk.marketingBudget:
         'Every coin pushed over provides a small ratings boost.',
     Perk.didYouHearAbout:
-        'Chatty characters double the ratings from Nosy tokens.',
+        'The gossip pipeline is open for business. Chatty characters double the ratings from Nosy tokens.',
     Perk.theMole:
-        'Loyal characters double the ratings from Scheming tokens.',
+        'Betraying the one person who trusts you. Scheming characters double the ratings from loyal tokens.',
     Perk.theyreDefinitelyOntoMe:
-        'Paranoid characters double the ratings from Oblivious tokens.',
+        'They\'re not. They\'re thinking about sandwiches. Paranoid characters double the ratings from Oblivious tokens.',
     Perk.theFeelingIsMutual:
-        'Flirty and Jealous characters double ratings for each other.',
+        'Both are watching each other. Neither knows why. Nosy and Paranoid characters double ratings for each other.',
     Perk.crickets:
-        'Chatty characters double the ratings from Stoic tokens.',
-    Perk.memeLord:
-        '5% chance to 10x a token’s ratings value when it falls.',
+        'One talks. One stares. America is obsessed. Chatty characters double the ratings from Stoic tokens.',
+    Perk.memeLord: '5% chance to 10x a token’s ratings value when it falls.',
   };
 
   String get description => descriptions[this]!;
@@ -69,7 +67,7 @@ enum Perk {
     Perk.didYouHearAbout: [Attribute.nosy],
     Perk.theMole: [Attribute.scheming],
     Perk.theyreDefinitelyOntoMe: [Attribute.oblivious],
-    Perk.theFeelingIsMutual: [Attribute.flirty, Attribute.jealous],
+    Perk.theFeelingIsMutual: [Attribute.nosy, Attribute.paranoid],
     Perk.crickets: [Attribute.stoic],
   };
 
