@@ -103,8 +103,11 @@ class _ShopScreenState extends State<ShopScreen> {
     return Material(
       color: const Color(0xCC000000),
       child: Center(
-        child: Container(
-          width: 1200,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 1200,
           constraints: const BoxConstraints(maxHeight: 550),
           margin: const EdgeInsets.symmetric(vertical: 24),
           padding: const EdgeInsets.all(32),
@@ -320,19 +323,21 @@ class _ShopScreenState extends State<ShopScreen> {
                 color: _pink.withValues(alpha: 0.5),
               ),
               Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Perks',
-                      style: TextStyle(
-                        fontFamily: 'CinzelDecorative',
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: _pink,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Perks',
+                        style: TextStyle(
+                          fontFamily: 'CinzelDecorative',
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: _pink,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 16),
                     if (_perkOptions.isEmpty)
                       Text(
@@ -408,24 +413,8 @@ class _ShopScreenState extends State<ShopScreen> {
                           );
                         }).toList(),
                       ),
-                    const SizedBox(height: 32),
-                    ElevatedButton(
-                      onPressed: () => widget.game.finishShop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _pink,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 48,
-                          vertical: 16,
-                        ),
-                        textStyle: const TextStyle(
-                          fontFamily: _fontFamily,
-                          fontSize: 36,
-                        ),
-                      ),
-                      child: const Text('Continue'),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -433,7 +422,26 @@ class _ShopScreenState extends State<ShopScreen> {
                 ),
               ),
             ),
-          ),
+            ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => widget.game.finishShop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _pink,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 48,
+                  vertical: 16,
+                ),
+                textStyle: const TextStyle(
+                  fontFamily: _fontFamily,
+                  fontSize: 36,
+                ),
+              ),
+              child: const Text('Continue'),
+            ),
+          ],
         ),
       ),
     );
