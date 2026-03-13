@@ -29,11 +29,18 @@ class _ShopScreenState extends State<ShopScreen> {
   late List<Attribute> _options;
   final _random = Random();
   final Set<Attribute> _purchasedThisSession = {};
+  final _unlockedScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _pickOptions();
+  }
+
+  @override
+  void dispose() {
+    _unlockedScrollController.dispose();
+    super.dispose();
   }
 
   void _rerollShop() {
@@ -211,11 +218,16 @@ class _ShopScreenState extends State<ShopScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      height: 200,
-                      child: Scrollbar(
+                    Expanded(
+                      child: ScrollbarTheme(
+                        data: ScrollbarThemeData(
+                          thumbColor: WidgetStateProperty.all(_pink),
+                        ),
+                        child: Scrollbar(
+                          controller: _unlockedScrollController,
+                          thumbVisibility: true,
                         child: ListView(
-                          shrinkWrap: true,
+                          controller: _unlockedScrollController,
                           children: [
                             if (widget.game.unlockedTokens.isEmpty)
                               Center(
@@ -268,6 +280,7 @@ class _ShopScreenState extends State<ShopScreen> {
                           ],
                         ),
                       ),
+                    ),
                     ),
                     const SizedBox(height: 16),
                     Padding(

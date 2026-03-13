@@ -148,14 +148,16 @@ class CastScreen extends PositionComponent
       add(container);
     }
 
-    _addOutlinedText(
-      text: 'Press Space to Continue',
-      position: Vector2(960, 940),
-      style: const TextStyle(fontFamily: 'VT323', fontSize: 48),
-      fillColor: const Color(0xFFFFFFFF),
-      strokeColor: const Color(0xFF1A0010),
-      strokeWidth: 4,
-    );
+    if (initialCast == null) {
+      _addOutlinedText(
+        text: 'Press Space to Continue',
+        position: Vector2(960, 940),
+        style: const TextStyle(fontFamily: 'VT323', fontSize: 48),
+        fillColor: const Color(0xFFFFFFFF),
+        strokeColor: const Color(0xFF1A0010),
+        strokeWidth: 4,
+      );
+    }
   }
 
   String _wrapText(String text, int maxChars) {
