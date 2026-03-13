@@ -67,9 +67,10 @@ class CoinPusher extends PositionComponent
   QueueToken _randomDramaOrAttribute() {
     final unlocked = game.unlockedTokens;
     if (unlocked.isEmpty) return DramaQueueToken();
-    final choices = <QueueToken>[DramaQueueToken()]
-      ..addAll(unlocked.entries
-          .map((e) => AttributeQueueToken(e.key, e.value)));
+    final choices = <QueueToken>[
+      DramaQueueToken(),
+      ...unlocked.entries.map((e) => AttributeQueueToken(e.key, e.value)),
+    ];
     return choices[_random.nextInt(choices.length)];
   }
 
@@ -87,8 +88,9 @@ class CoinPusher extends PositionComponent
   }
 
   Future<void> convertDramaToAttribute(Attribute attr, int level) async {
-    final dramaTokens =
-        _tokens.where((t) => t.type == TokenType.drama && t.attribute == null);
+    final dramaTokens = _tokens.where(
+      (t) => t.type == TokenType.drama && t.attribute == null,
+    );
     final list = dramaTokens.toList();
     final count = (list.length / 3).floor();
     if (count <= 0) return;
@@ -117,8 +119,7 @@ class CoinPusher extends PositionComponent
     for (final attr in Attribute.values) {
       final name =
           '${attr.name[0].toUpperCase()}${attr.name.substring(1)}_Chip.png';
-      _attributeImages[attr] =
-          await game.images.load('assets/playfield/$name');
+      _attributeImages[attr] = await game.images.load('assets/playfield/$name');
     }
     _smokeImage = await game.images.load('assets/playfield/smoke.png');
     tvImage = await game.images.load('assets/playfield/tv_no_antenna.png');
@@ -159,7 +160,8 @@ class CoinPusher extends PositionComponent
 
     final bodyDef = f2d.BodyDef(type: f2d.BodyType.static);
     final body = _world.createBody(bodyDef);
-    final shape = f2d.EdgeShape()..set(f2d.Vector2(dropX, 0), f2d.Vector2(dropX, h));
+    final shape = f2d.EdgeShape()
+      ..set(f2d.Vector2(dropX, 0), f2d.Vector2(dropX, h));
     final fixtureDef = f2d.FixtureDef(shape)..isSensor = true;
     body.createFixture(fixtureDef);
     body.userData = 'dropZone';
@@ -216,18 +218,18 @@ class CoinPusher extends PositionComponent
       );
       final body = _world.createBody(bodyDef);
       final shape = f2d.CircleShape()..radius = radius;
-      body.createFixture(f2d.FixtureDef(
-        shape,
-        friction: 0.3,
-        restitution: 0.2,
-        density: 1.0,
-      ));
+      body.createFixture(
+        f2d.FixtureDef(shape, friction: 0.3, restitution: 0.2, density: 1.0),
+      );
 
       final (type, attr, level) = switch (queueToken) {
         CoinQueueToken() => (TokenType.coin, null, 1),
         DramaQueueToken() => (TokenType.drama, null, 1),
-        AttributeQueueToken(:final attribute, :final level) =>
-          (TokenType.drama, attribute, level),
+        AttributeQueueToken(:final attribute, :final level) => (
+          TokenType.drama,
+          attribute,
+          level,
+        ),
       };
       final token = TokenBody(
         type: type,
@@ -247,9 +249,11 @@ class CoinPusher extends PositionComponent
     var extra = 0;
     Perk? flash;
     final cast = game.currentCast;
-    int count(Attribute a) => cast.where((c) => c.attributes.contains(a)).length;
+    int count(Attribute a) =>
+        cast.where((c) => c.attributes.contains(a)).length;
 
-    if (game.ownedPerks.contains(Perk.doubleThreat) && tokenAttr == Attribute.charming) {
+    if (game.ownedPerks.contains(Perk.doubleThreat) &&
+        tokenAttr == Attribute.charming) {
       final n = count(Attribute.flirty);
       extra += n;
       if (n > 0) flash ??= Perk.doubleThreat;
@@ -271,27 +275,32 @@ class CoinPusher extends PositionComponent
       extra += n;
       if (n > 0) flash ??= Perk.theFeelingIsMutual;
     }
-    if (game.ownedPerks.contains(Perk.tooEasy) && tokenAttr == Attribute.oblivious) {
+    if (game.ownedPerks.contains(Perk.tooEasy) &&
+        tokenAttr == Attribute.oblivious) {
       final n = count(Attribute.scheming);
       extra += n;
       if (n > 0) flash ??= Perk.tooEasy;
     }
-    if (game.ownedPerks.contains(Perk.didYouHearAbout) && tokenAttr == Attribute.nosy) {
+    if (game.ownedPerks.contains(Perk.didYouHearAbout) &&
+        tokenAttr == Attribute.nosy) {
       final n = count(Attribute.chatty);
       extra += n;
       if (n > 0) flash ??= Perk.didYouHearAbout;
     }
-    if (game.ownedPerks.contains(Perk.theMole) && tokenAttr == Attribute.scheming) {
+    if (game.ownedPerks.contains(Perk.theMole) &&
+        tokenAttr == Attribute.scheming) {
       final n = count(Attribute.loyal);
       extra += n;
       if (n > 0) flash ??= Perk.theMole;
     }
-    if (game.ownedPerks.contains(Perk.theyreDefinitelyOntoMe) && tokenAttr == Attribute.oblivious) {
+    if (game.ownedPerks.contains(Perk.theyreDefinitelyOntoMe) &&
+        tokenAttr == Attribute.oblivious) {
       final n = count(Attribute.paranoid);
       extra += n;
       if (n > 0) flash ??= Perk.theyreDefinitelyOntoMe;
     }
-    if (game.ownedPerks.contains(Perk.crickets) && tokenAttr == Attribute.stoic) {
+    if (game.ownedPerks.contains(Perk.crickets) &&
+        tokenAttr == Attribute.stoic) {
       final n = count(Attribute.chatty);
       extra += n;
       if (n > 0) flash ??= Perk.crickets;
@@ -311,7 +320,9 @@ class CoinPusher extends PositionComponent
             .where((c) => c.attributes.contains(token.attribute))
             .length;
         final perChar = token.attributeLevel;
-        final (doublerCount, flashPerk) = _attributeDoublerBonus(token.attribute!);
+        final (doublerCount, flashPerk) = _attributeDoublerBonus(
+          token.attribute!,
+        );
         final effectiveMatch = matchCount + doublerCount;
         final multiplier = 1 + effectiveMatch * perChar;
         var gain = 5.0 * multiplier;
@@ -341,10 +352,7 @@ class CoinPusher extends PositionComponent
     final img = _smokeImage;
     if (img == null) return;
 
-    final sheet = SpriteSheet(
-      image: img,
-      srcSize: Vector2(32, 32),
-    );
+    final sheet = SpriteSheet(image: img, srcSize: Vector2(32, 32));
     final animation = sheet.createAnimation(
       row: 0,
       stepTime: 0.05,
@@ -353,20 +361,21 @@ class CoinPusher extends PositionComponent
       to: 7,
     );
 
-    add(SpriteAnimationComponent(
-      animation: animation,
-      size: Vector2.all(tokenSize),
-      position: position,
-      anchor: Anchor.center,
-      removeOnFinish: true,
-    ));
+    add(
+      SpriteAnimationComponent(
+        animation: animation,
+        size: Vector2.all(tokenSize),
+        position: position,
+        anchor: Anchor.center,
+        removeOnFinish: true,
+      ),
+    );
   }
 
   bool get launcherBlocked {
     if (_pusher == null) return true;
     if (!_pusher!.hasCompletedFirstPush) return true;
-    final pusherRightEdge =
-        _pusher!.body.position.x / _scale + _pusherHalfW;
+    final pusherRightEdge = _pusher!.body.position.x / _scale + _pusherHalfW;
     final outerLimit = _pusher!.startX + _pushDistance - _outerDisableMargin;
     return pusherRightEdge >= outerLimit;
   }
@@ -385,13 +394,17 @@ class CoinPusher extends PositionComponent
   }
 
   void rotateLauncherUp(double dt) {
-    launcherAngle = (launcherAngle + _launcherAngleSpeed * dt)
-        .clamp(_launcherAngleMin, _launcherAngleMax);
+    launcherAngle = (launcherAngle + _launcherAngleSpeed * dt).clamp(
+      _launcherAngleMin,
+      _launcherAngleMax,
+    );
   }
 
   void rotateLauncherDown(double dt) {
-    launcherAngle = (launcherAngle - _launcherAngleSpeed * dt)
-        .clamp(_launcherAngleMin, _launcherAngleMax);
+    launcherAngle = (launcherAngle - _launcherAngleSpeed * dt).clamp(
+      _launcherAngleMin,
+      _launcherAngleMax,
+    );
   }
 
   void shoot() {
@@ -421,12 +434,9 @@ class CoinPusher extends PositionComponent
     );
     final body = _world.createBody(bodyDef);
     final shape = f2d.CircleShape()..radius = radius;
-    body.createFixture(f2d.FixtureDef(
-      shape,
-      friction: 0.3,
-      restitution: 0.2,
-      density: 1.0,
-    ));
+    body.createFixture(
+      f2d.FixtureDef(shape, friction: 0.3, restitution: 0.2, density: 1.0),
+    );
 
     final vx = cos(angle) * _shootSpeed * _scale;
     final vy = sin(angle) * _shootSpeed * _scale;
@@ -435,8 +445,11 @@ class CoinPusher extends PositionComponent
     final (type, attr, level) = switch (queueToken) {
       CoinQueueToken() => (TokenType.coin, null, 1),
       DramaQueueToken() => (TokenType.drama, null, 1),
-      AttributeQueueToken(:final attribute, :final level) =>
-        (TokenType.drama, attribute, level),
+      AttributeQueueToken(:final attribute, :final level) => (
+        TokenType.drama,
+        attribute,
+        level,
+      ),
     };
     final token = TokenBody(
       type: type,
@@ -461,8 +474,7 @@ class CoinPusher extends PositionComponent
       final rechargeRate = game.ownedPerks.contains(Perk.skillStopRecharge)
           ? 4 / 10
           : 1 / 10;
-      skillStopCharge =
-          (skillStopCharge + dt * rechargeRate).clamp(0.0, 1.0);
+      skillStopCharge = (skillStopCharge + dt * rechargeRate).clamp(0.0, 1.0);
       _pusher?.setFrozen(false);
     }
     health = (health - dt * 3).clamp(0, 100);
@@ -485,7 +497,10 @@ class CoinPusher extends PositionComponent
   @override
   void render(ui.Canvas canvas) {
     canvas.clipRect(size.toRect());
-    canvas.drawRect(size.toRect(), ui.Paint()..color = const ui.Color(_bgColor));
+    canvas.drawRect(
+      size.toRect(),
+      ui.Paint()..color = const ui.Color(_bgColor),
+    );
     super.render(canvas);
     _renderEdge(canvas);
   }
@@ -496,12 +511,19 @@ class CoinPusher extends PositionComponent
 
     final x = fieldWidth - _edgeWidth;
     final srcRect = ui.Rect.fromLTWH(
-        0, 0, img.width.toDouble(), img.height.toDouble());
+      0,
+      0,
+      img.width.toDouble(),
+      img.height.toDouble(),
+    );
     final dstRect = ui.Rect.fromLTWH(x, 0, _edgeWidth, fieldHeight);
     canvas.drawImageRect(
-        img, srcRect, dstRect, ui.Paint()..filterQuality = ui.FilterQuality.low);
+      img,
+      srcRect,
+      dstRect,
+      ui.Paint()..filterQuality = ui.FilterQuality.low,
+    );
   }
-
 }
 
 class _LauncherOverlay extends PositionComponent {
@@ -518,7 +540,13 @@ class _LauncherOverlay extends PositionComponent {
 
     final pos = pusher.launcherPosition;
     _drawLauncher(
-        canvas, pos.x, pos.y, pusher.launcherAngle, pusher.launcherBlocked, img);
+      canvas,
+      pos.x,
+      pos.y,
+      pusher.launcherAngle,
+      pusher.launcherBlocked,
+      img,
+    );
   }
 
   void _drawLauncher(
@@ -534,17 +562,26 @@ class _LauncherOverlay extends PositionComponent {
     canvas.rotate(angle);
 
     final srcRect = ui.Rect.fromLTWH(
-        0, 0, img.width.toDouble(), img.height.toDouble());
+      0,
+      0,
+      img.width.toDouble(),
+      img.height.toDouble(),
+    );
     final aspect = img.width / img.height;
     final drawW = _launcherDrawSize;
     final drawH = drawW / aspect;
     final dstRect = ui.Rect.fromCenter(
-        center: ui.Offset.zero, width: drawW, height: drawH);
+      center: ui.Offset.zero,
+      width: drawW,
+      height: drawH,
+    );
 
     final paint = ui.Paint()..filterQuality = ui.FilterQuality.low;
     if (disabled) {
       paint.colorFilter = const ui.ColorFilter.mode(
-          ui.Color(0x88000000), ui.BlendMode.srcATop);
+        ui.Color(0x88000000),
+        ui.BlendMode.srcATop,
+      );
     }
 
     canvas.drawImageRect(img, srcRect, dstRect, paint);

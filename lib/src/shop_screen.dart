@@ -33,6 +33,7 @@ class _ShopScreenState extends State<ShopScreen> {
   final Set<Attribute> _purchasedThisSession = {};
   static const _perkCost = 200;
   final _unlockedScrollController = ScrollController();
+  final _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -42,6 +43,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _unlockedScrollController.dispose();
     super.dispose();
   }
@@ -111,11 +113,18 @@ class _ShopScreenState extends State<ShopScreen> {
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: _pink, width: 3),
           ),
-          child: SingleChildScrollView(
-            child: SizedBox(
-              width: 1200,
-              height: 700,
-              child: Row(
+          child: ScrollbarTheme(
+            data: ScrollbarThemeData(
+              thumbColor: WidgetStateProperty.all(_pink),
+            ),
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                child: SizedBox(
+                  width: 1200,
+                  child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
@@ -140,7 +149,7 @@ class _ShopScreenState extends State<ShopScreen> {
                               offset: const Offset(8, 0),
                               child: const Text(
                                 'Shop',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontFamily: 'CinzelDecorative',
                                   fontSize: 48,
                                   fontWeight: FontWeight.bold,
@@ -185,73 +194,6 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                       ],
                     ),
-                    if (_perkOptions.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        'Perks',
-                        style: const TextStyle(
-                          fontFamily: 'CinzelDecorative',
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: _pink,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 8,
-                        alignment: WrapAlignment.center,
-                        children: _perkOptions.map((perk) {
-                          final canBuy = widget.game.coins >= _perkCost;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  perk.label,
-                                  style: const TextStyle(
-                                    fontFamily: _fontFamily,
-                                    fontSize: 24,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: canBuy
-                                      ? () => _purchasePerk(perk)
-                                      : null,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _pink,
-                                    disabledBackgroundColor: Colors.grey,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 8),
-                                    textStyle: const TextStyle(
-                                      fontFamily: _fontFamily,
-                                      fontSize: 22,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Text('Buy ('),
-                                      Image.asset(
-                                        'assets/playfield/coin.png',
-                                        width: 20,
-                                        height: 20,
-                                        fit: BoxFit.contain,
-                                      ),
-                                      Text(' $_perkCost)'),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
                     const SizedBox(height: 24),
                     Transform.translate(
                       offset: const Offset(-24, 0),
@@ -284,6 +226,188 @@ class _ShopScreenState extends State<ShopScreen> {
                       }                        ).toList(),
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Unlocked Chips',
+                      style: TextStyle(
+                        fontFamily: 'CinzelDecorative',
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: _pink,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 200,
+                      child: ScrollbarTheme(
+                        data: ScrollbarThemeData(
+                          thumbColor: WidgetStateProperty.all(_pink),
+                        ),
+                        child: Scrollbar(
+                          controller: _unlockedScrollController,
+                          thumbVisibility: true,
+                          child: ListView(
+                            controller: _unlockedScrollController,
+                            padding:
+                                const EdgeInsets.only(left: 24, right: 16),
+                            children: [
+                              if (widget.game.unlockedTokens.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24),
+                                  child: Text(
+                                    'Attribute chips give you an additional '
+                                    'ratings boost for each character with the '
+                                    'matching attribute',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: _fontFamily,
+                                      fontSize: 22,
+                                      color: Colors.white
+                                          .withValues(alpha: 0.7),
+                                    ),
+                                  ),
+                                )
+                              else
+                                ...widget.game.unlockedTokens.entries.map(
+                                  (e) => Padding(
+                                    padding:
+                                        const EdgeInsets.only(bottom: 12),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 48,
+                                          height: 48,
+                                          child: Image.asset(
+                                            'assets/playfield/${e.key.name[0].toUpperCase()}${e.key.name.substring(1)}_Chip.png',
+                                            width: 48,
+                                            height: 48,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (context, error,
+                                                    stackTrace) =>
+                                                const SizedBox(
+                                              width: 48,
+                                              height: 48,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          '${e.key.label} Lv.${e.value}',
+                                          style: const TextStyle(
+                                            fontFamily: _fontFamily,
+                                            fontSize: 28,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 2,
+                height: 400,
+                color: _pink.withValues(alpha: 0.5),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Perks',
+                      style: TextStyle(
+                        fontFamily: 'CinzelDecorative',
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: _pink,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_perkOptions.isEmpty)
+                      Text(
+                        'No perks available right now.',
+                        style: const TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: 22,
+                          color: Colors.white,
+                        ),
+                      )
+                    else
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: _perkOptions.map((perk) {
+                          final canBuy = widget.game.coins >= _perkCost;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  perk.label,
+                                  style: const TextStyle(
+                                    fontFamily: _fontFamily,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF87CEEB),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  perk.description,
+                                  style: const TextStyle(
+                                    fontFamily: _fontFamily,
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: canBuy
+                                      ? () => _purchasePerk(perk)
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: _pink,
+                                    disabledBackgroundColor: Colors.grey,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 10,
+                                    ),
+                                    textStyle: const TextStyle(
+                                      fontFamily: _fontFamily,
+                                      fontSize: 22,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text('Buy ('),
+                                      Image.asset(
+                                        'assets/playfield/coin.png',
+                                        width: 20,
+                                        height: 20,
+                                        fit: BoxFit.contain,
+                                      ),
+                                      Text(' $_perkCost)'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     const SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: () => widget.game.finishShop(),
@@ -304,101 +428,10 @@ class _ShopScreenState extends State<ShopScreen> {
                   ],
                 ),
               ),
-              Container(
-                width: 2,
-                height: 400,
-                color: _pink.withValues(alpha: 0.5),
-              ),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Unlocked Chips',
-                      style: TextStyle(
-                        fontFamily: 'CinzelDecorative',
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: _pink,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: ScrollbarTheme(
-                        data: ScrollbarThemeData(
-                          thumbColor: WidgetStateProperty.all(_pink),
-                        ),
-                        child: Scrollbar(
-                          controller: _unlockedScrollController,
-                          thumbVisibility: true,
-                        child: ListView(
-                          controller: _unlockedScrollController,
-                          padding: const EdgeInsets.only(left: 24, right: 16),
-                          children: [
-                            if (widget.game.unlockedTokens.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 24),
-                                child: Text(
-                                  'Attribute chips give you an additional '
-                                  'ratings boost for each character with the '
-                                  'matching attribute',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontFamily: _fontFamily,
-                                    fontSize: 22,
-                                    color: Colors.white.withValues(alpha: 0.7),
-                                  ),
-                                ),
-                              )
-                            else
-                              ...widget.game.unlockedTokens.entries.map(
-                                (e) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 48,
-                                        height: 48,
-                                        child: Image.asset(
-                                          'assets/playfield/${e.key.name[0].toUpperCase()}${e.key.name.substring(1)}_Chip.png',
-                                          width: 48,
-                                          height: 48,
-                                          fit: BoxFit.contain,
-                                          errorBuilder:
-                                              (context, error, stackTrace) =>
-                                                  const SizedBox(
-                                                    width: 48,
-                                                    height: 48,
-                                                  ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        '${e.key.label} Lv.${e.value}',
-                                        style: const TextStyle(
-                                          fontFamily: _fontFamily,
-                                          fontSize: 28,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
+                ),
+              ),
             ),
           ),
         ),
