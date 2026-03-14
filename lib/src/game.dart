@@ -136,6 +136,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     if (coins < rerollCost) return false;
     coins -= rerollCost;
     _rerollCount++;
+    AudioService.instance.playSfx(Sfx.roll);
     return true;
   }
 

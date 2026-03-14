@@ -4,7 +4,7 @@ import 'package:flame_audio/flame_audio.dart';
 
 enum MusicTrack { intro, playfield, seasonChange }
 
-enum Sfx { coin, continuePress, fail, win, shoot }
+enum Sfx { coin, continuePress, fail, win, shoot, roll }
 
 class AudioService {
   static final AudioService instance = AudioService._();
@@ -20,9 +20,13 @@ class AudioService {
     Sfx.shoot: 0.4,
   };
 
-  static const _pooledSfx = <Sfx, int>{Sfx.coin: 3, Sfx.shoot: 6};
+  static const _pooledSfx = <Sfx, int>{Sfx.coin: 6, Sfx.shoot: 6};
 
   final Map<Sfx, AudioPool> _pools = {};
+
+  static const _musicVolume = <MusicTrack, double>{
+    MusicTrack.seasonChange: 0.75,
+  };
 
   static const _musicPaths = <MusicTrack, String>{
     MusicTrack.intro: 'music/intro.mp3',
@@ -36,6 +40,7 @@ class AudioService {
     Sfx.fail: 'sfx/fail.mp3',
     Sfx.win: 'sfx/win.mp3',
     Sfx.shoot: 'sfx/shoot.mp3',
+    Sfx.roll: 'sfx/roll.mp3',
   };
 
   Future<void> init() async {
@@ -69,7 +74,8 @@ class AudioService {
     if (path == null) return;
 
     try {
-      await FlameAudio.bgm.play(path);
+      final volume = _musicVolume[track] ?? 1.0;
+      await FlameAudio.bgm.play(path, volume: volume);
       _currentTrack = track;
     } catch (e, st) {
       developer.log('AudioService playMusic failed', error: e, stackTrace: st);
