@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flame: ^1.36.0
   forge2d: ^0.14.2+1
-  flutter_soloud: ^3.5.0
+  flame_audio: ^2.11.13
   google_fonts: ^8.0.2
   flame_forge2d: ^0.19.2+5
 
