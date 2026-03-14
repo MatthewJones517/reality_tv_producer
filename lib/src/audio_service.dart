@@ -4,7 +4,7 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 
 enum MusicTrack { intro, playfield, seasonChange }
 
-enum Sfx { coin, continuePress, fail, win }
+enum Sfx { coin, continuePress, fail, win, shoot }
 
 class AudioService {
   static final AudioService instance = AudioService._();
@@ -22,11 +22,10 @@ class AudioService {
   static const _sfxVolume = <Sfx, double>{
     Sfx.coin: 0.25,
     Sfx.fail: 0.75,
+    Sfx.shoot: 0.4,
   };
 
-  static const _sfxMaxInstances = <Sfx, int>{
-    Sfx.coin: 3,
-  };
+  static const _sfxMaxInstances = <Sfx, int>{Sfx.coin: 3};
 
   SoundHandle? _currentMusicHandle;
   MusicTrack? _currentTrack;
@@ -35,9 +34,7 @@ class AudioService {
     if (_initialized) return;
     try {
       await SoLoud.instance.init();
-      _introSource = await SoLoud.instance.loadAsset(
-        'assets/music/intro.mp3',
-      );
+      _introSource = await SoLoud.instance.loadAsset('assets/music/intro.mp3');
       _playfieldSource = await SoLoud.instance.loadAsset(
         'assets/music/playfield.mp3',
       );
@@ -56,6 +53,9 @@ class AudioService {
       );
       _sfxSources[Sfx.win] = await SoLoud.instance.loadAsset(
         'assets/sfx/win.mp3',
+      );
+      _sfxSources[Sfx.shoot] = await SoLoud.instance.loadAsset(
+        'assets/sfx/shoot.mp3',
       );
 
       _initialized = true;
@@ -78,10 +78,7 @@ class AudioService {
     if (source == null) return;
 
     try {
-      _currentMusicHandle = await SoLoud.instance.play(
-        source,
-        looping: true,
-      );
+      _currentMusicHandle = await SoLoud.instance.play(source, looping: true);
       _currentTrack = track;
     } catch (e, st) {
       developer.log('AudioService play failed', error: e, stackTrace: st);

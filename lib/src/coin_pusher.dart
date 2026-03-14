@@ -149,6 +149,7 @@ class CoinPusher extends PositionComponent
   void shoot() {
     if (!launcherBlocked && _launcherCooldown <= 0) {
       _launcherCooldown = _fireCooldown;
+      AudioService.instance.playSfx(Sfx.shoot);
       _shootAt(launcherPosition.x, launcherPosition.y, launcherAngle);
     }
   }
