@@ -71,6 +71,8 @@ flutter:
     - assets/characters/torso/
     - assets/title_screen/
     - assets/playfield/
+    - assets/music/
+    - assets/sfx/
 
   fonts:
     - family: CinzelDecorative

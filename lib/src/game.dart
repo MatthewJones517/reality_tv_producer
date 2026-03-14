@@ -6,6 +6,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'audio_service.dart';
 import 'cast_screen.dart';
 import 'character.dart';
 import 'character_generator.dart';
@@ -59,6 +60,8 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   Future<void> onLoad() async {
     images.prefix = '';
     camera.moveTo(Vector2(_width / 2, _height / 2));
+    await AudioService.instance.init();
+    await AudioService.instance.playMusic(MusicTrack.intro);
     world.add(TitleScreen());
   }
 
@@ -107,6 +110,8 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     world.children.whereType<PlayScreen>().forEach((c) => c.removeFromParent());
     activePusher = null;
 
+    await AudioService.instance.playMusic(MusicTrack.seasonChange);
+
     _currentCast = await _generateCast();
 
     _castScreen?.removeFromParent();
@@ -154,6 +159,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     }
     _castScreen = null;
     _scene = GameScene.playing;
+    AudioService.instance.playMusic(MusicTrack.playfield);
     world.add(PlayScreen(cast: _currentCast, initialCoins: coins));
     gameFocusNode.requestFocus();
   }
@@ -190,6 +196,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
 
   void triggerWin() {
     if (_scene != GameScene.playing) return;
+    AudioService.instance.stopMusic();
     coins = activePusher?.coinsCollected ?? coins;
     _scene = GameScene.win;
     overlays.add(Overlays.win);
@@ -198,6 +205,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
 
   void triggerGameOver() {
     if (_scene != GameScene.playing) return;
+    AudioService.instance.stopMusic();
     _scene = GameScene.gameOver;
     overlays.add(Overlays.gameOver);
     pauseEngine();
@@ -211,6 +219,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     _castScreen = null;
     world.add(TitleScreen());
     _scene = GameScene.title;
+    AudioService.instance.playMusic(MusicTrack.intro);
     showName = null;
     currentSeason = 1;
     currentEpisode = 1;
