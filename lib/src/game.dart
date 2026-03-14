@@ -193,6 +193,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   }
 
   void finishShop() {
+    AudioService.instance.playSfx(Sfx.continuePress);
     overlays.remove(Overlays.shop);
     activePusher?.coinsCollected = coins;
     resumeEngine();

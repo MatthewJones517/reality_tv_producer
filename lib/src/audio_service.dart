@@ -21,6 +21,7 @@ class AudioService {
 
   static const _sfxVolume = <Sfx, double>{
     Sfx.coin: 0.25,
+    Sfx.fail: 0.75,
   };
 
   static const _sfxMaxInstances = <Sfx, int>{
