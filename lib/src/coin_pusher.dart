@@ -466,7 +466,11 @@ class CoinPusher extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    final drainRate = 3.0 * pow(1.2, game.currentSeason - 1);
+    final s = game.currentSeason;
+    final multiplier = s <= 4
+        ? pow(1.2, s - 1)
+        : pow(1.2, 3) * pow(1.15, s - 4);
+    final drainRate = 3.0 * multiplier;
     health = (health - dt * drainRate).clamp(0, 100);
     if (health <= 0) game.triggerGameOver();
     if (_launcherCooldown > 0) _launcherCooldown -= dt;
