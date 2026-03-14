@@ -151,6 +151,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   }
 
   void proceedFromCastScreen() {
+    AudioService.instance.playSfx(Sfx.continuePress);
     overlays.remove(Overlays.castCooldown);
     final screen = _castScreen;
     if (screen != null) {
@@ -197,6 +198,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   void triggerWin() {
     if (_scene != GameScene.playing) return;
     AudioService.instance.stopMusic();
+    AudioService.instance.playSfx(Sfx.win);
     coins = activePusher?.coinsCollected ?? coins;
     _scene = GameScene.win;
     overlays.add(Overlays.win);
@@ -206,12 +208,14 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   void triggerGameOver() {
     if (_scene != GameScene.playing) return;
     AudioService.instance.stopMusic();
+    AudioService.instance.playSfx(Sfx.fail);
     _scene = GameScene.gameOver;
     overlays.add(Overlays.gameOver);
     pauseEngine();
   }
 
   void resetToTitle() {
+    AudioService.instance.playSfx(Sfx.continuePress);
     overlays.remove(Overlays.gameOver);
     overlays.remove(Overlays.win);
     world.children.whereType<PlayScreen>().forEach((c) => c.removeFromParent());

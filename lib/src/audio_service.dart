@@ -4,6 +4,8 @@ import 'package:flutter_soloud/flutter_soloud.dart';
 
 enum MusicTrack { intro, playfield, seasonChange }
 
+enum Sfx { coin, continuePress, fail, win }
+
 class AudioService {
   static final AudioService instance = AudioService._();
 
@@ -14,6 +16,8 @@ class AudioService {
   AudioSource? _introSource;
   AudioSource? _playfieldSource;
   AudioSource? _seasonChangeSource;
+
+  final Map<Sfx, AudioSource> _sfxSources = {};
 
   SoundHandle? _currentMusicHandle;
   MusicTrack? _currentTrack;
@@ -31,6 +35,20 @@ class AudioService {
       _seasonChangeSource = await SoLoud.instance.loadAsset(
         'assets/music/season-change.mp3',
       );
+
+      _sfxSources[Sfx.coin] = await SoLoud.instance.loadAsset(
+        'assets/sfx/coin.mp3',
+      );
+      _sfxSources[Sfx.continuePress] = await SoLoud.instance.loadAsset(
+        'assets/sfx/continue.mp3',
+      );
+      _sfxSources[Sfx.fail] = await SoLoud.instance.loadAsset(
+        'assets/sfx/fail.mp3',
+      );
+      _sfxSources[Sfx.win] = await SoLoud.instance.loadAsset(
+        'assets/sfx/win.mp3',
+      );
+
       _initialized = true;
     } catch (e, st) {
       developer.log('AudioService init failed', error: e, stackTrace: st);
@@ -61,6 +79,17 @@ class AudioService {
     }
   }
 
+  void playSfx(Sfx sfx) {
+    if (!_initialized) return;
+    final source = _sfxSources[sfx];
+    if (source == null) return;
+    try {
+      SoLoud.instance.play(source);
+    } catch (e, st) {
+      developer.log('AudioService playSfx failed', error: e, stackTrace: st);
+    }
+  }
+
   Future<void> stopMusic() async {
     if (!_initialized) return;
     final handle = _currentMusicHandle;
@@ -86,6 +115,10 @@ class AudioService {
     if (_seasonChangeSource != null) {
       await SoLoud.instance.disposeSource(_seasonChangeSource!);
     }
+    for (final source in _sfxSources.values) {
+      await SoLoud.instance.disposeSource(source);
+    }
+    _sfxSources.clear();
     SoLoud.instance.deinit();
     _initialized = false;
   }

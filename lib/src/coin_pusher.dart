@@ -5,6 +5,7 @@ import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 import 'package:forge2d/forge2d.dart' as f2d;
 
+import 'audio_service.dart';
 import 'character.dart';
 import 'game.dart';
 import 'game_config.dart';
@@ -101,7 +102,7 @@ class CoinPusher extends PositionComponent
     );
 
     if (result.isCoin) {
-      // Coin counting happens in update() when pending removal is processed.
+      AudioService.instance.playSfx(Sfx.coin);
     }
     if (result.healthDelta > 0) {
       health = (health + result.healthDelta).clamp(0, HealthConfig.maxHealth);
