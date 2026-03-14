@@ -8,9 +8,10 @@ import 'package:forge2d/forge2d.dart' as f2d;
 import 'character.dart';
 import 'game.dart';
 import 'game_config.dart';
-import 'perk.dart';
 import 'pusher_body.dart';
+import 'scoring.dart';
 import 'token_body.dart';
+import 'token_queue.dart';
 
 class CoinPusher extends PositionComponent
     with HasGameReference<RealityTvGame> {
@@ -32,7 +33,7 @@ class CoinPusher extends PositionComponent
   static const _launcherAngleMax = pi / 2 - 0.1;
   static const _outerDisableMargin = 100.0;
 
-  static const queueSize = 6;
+  static const _fireCooldown = 0.15;
 
   late final f2d.World _world;
   final _random = Random();
@@ -47,40 +48,31 @@ class CoinPusher extends PositionComponent
   ui.Image? tvImage;
   final Map<Attribute, ui.Image> _attributeImages = {};
 
-  static const _fireCooldown = 0.15;
-
   final List<TokenBody> _pendingRemoval = [];
-  final List<QueueToken> tokenQueue = [];
   int coinsCollected = 0;
   double health = HealthConfig.initialHealth;
   double launcherAngle = 0;
   double _launcherCooldown = 0;
 
+  late final ScoringEngine _scoring;
+  late final TokenQueue _tokenQueue;
+
+  List<QueueToken> get tokenQueue => _tokenQueue.queue;
+
   CoinPusher({int initialCoins = 0}) {
     size = Vector2(fieldWidth, fieldHeight);
     coinsCollected = initialCoins;
+    _scoring = ScoringEngine();
   }
 
-  QueueToken _randomDramaOrAttribute() {
-    final unlocked = game.unlockedTokens;
-    if (unlocked.isEmpty) return DramaQueueToken();
-    final choices = <QueueToken>[
-      DramaQueueToken(),
-      ...unlocked.entries.map((e) => AttributeQueueToken(e.key, e.value)),
-    ];
-    return choices[_random.nextInt(choices.length)];
-  }
+  // ─── Token Queue ─────────────────────────────────────────────────────────
 
-  QueueToken _randomQueueToken() {
-    final r = _random.nextDouble();
-    if (r < SpawnConfig.coinSpawnRatio) return CoinQueueToken();
-    return _randomDramaOrAttribute();
-  }
-
-  QueueToken _randomSpawnToken() {
-    final r = _random.nextDouble();
-    if (r < SpawnConfig.coinSpawnRatio) return CoinQueueToken();
-    return _randomDramaOrAttribute();
+  ui.Image? imageForQueueToken(QueueToken t) {
+    return switch (t) {
+      CoinQueueToken() => coinImage,
+      DramaQueueToken() => dramaImage,
+      AttributeQueueToken(attribute: final a) => _attributeImages[a],
+    };
   }
 
   Future<void> convertDramaToAttribute(Attribute attr, int level) async {
@@ -96,11 +88,96 @@ class CoinPusher extends PositionComponent
     }
   }
 
-  void _fillQueue() {
-    while (tokenQueue.length < queueSize) {
-      tokenQueue.insert(0, _randomQueueToken());
+  // ─── Scoring ─────────────────────────────────────────────────────────────
+
+  void onTokenHitDropZone(TokenBody token) {
+    if (token.collected) return;
+    token.collected = true;
+
+    final result = _scoring.scoreToken(
+      token,
+      ownedPerks: game.ownedPerks,
+      cast: game.currentCast,
+    );
+
+    if (result.isCoin) {
+      // Coin counting happens in update() when pending removal is processed.
+    }
+    if (result.healthDelta > 0) {
+      health = (health + result.healthDelta).clamp(0, HealthConfig.maxHealth);
+    }
+    if (result.perkFlashName != null) {
+      game.showPerkFlash(
+        result.perkFlashName!,
+        duration: result.perkFlashDuration,
+      );
+    }
+
+    _pendingRemoval.add(token);
+  }
+
+  // ─── Launcher ────────────────────────────────────────────────────────────
+
+  bool get launcherBlocked {
+    final p = _pusher;
+    if (p == null) return true;
+    if (!p.hasCompletedFirstPush) return true;
+    final pusherRightEdge = p.body.position.x / _scale + _pusherHalfW;
+    final outerLimit = p.startX + _pushDistance - _outerDisableMargin;
+    return pusherRightEdge >= outerLimit;
+  }
+
+  Vector2 get launcherPosition {
+    return _pusher?.position.clone() ?? Vector2.zero();
+  }
+
+  void rotateLauncherUp(double dt) {
+    launcherAngle = (launcherAngle + _launcherAngleSpeed * dt).clamp(
+      _launcherAngleMin,
+      _launcherAngleMax,
+    );
+  }
+
+  void rotateLauncherDown(double dt) {
+    launcherAngle = (launcherAngle - _launcherAngleSpeed * dt).clamp(
+      _launcherAngleMin,
+      _launcherAngleMax,
+    );
+  }
+
+  void shoot() {
+    if (!launcherBlocked && _launcherCooldown <= 0) {
+      _launcherCooldown = _fireCooldown;
+      _shootAt(launcherPosition.x, launcherPosition.y, launcherAngle);
     }
   }
+
+  Future<void> _shootAt(double originX, double originY, double angle) async {
+    final queueToken = _tokenQueue.pop();
+    if (queueToken == null) return;
+
+    final diameter = TokenBody.diameterForQueueToken(queueToken);
+    final radius = (diameter / 2) * _scale;
+
+    final offset = _launcherRadius + diameter / 2 + 4;
+    final spawnX = originX + cos(angle) * offset;
+    final spawnY = originY + sin(angle) * offset;
+
+    final body = _createTokenBody(
+      spawnX * _scale,
+      spawnY * _scale,
+      radius,
+      bullet: true,
+    );
+
+    final vx = cos(angle) * _shootSpeed * _scale;
+    final vy = sin(angle) * _shootSpeed * _scale;
+    body.linearVelocity = f2d.Vector2(vx, vy);
+
+    await _addTokenFromQueue(queueToken, body);
+  }
+
+  // ─── Physics Setup ───────────────────────────────────────────────────────
 
   @override
   Future<void> onLoad() async {
@@ -119,7 +196,7 @@ class CoinPusher extends PositionComponent
     tvImage = await game.images.load(Assets.tvNoAntenna);
     final pusherImage = await game.images.load(Assets.pusher);
 
-    _fillQueue();
+    _tokenQueue = TokenQueue(unlockedTokens: () => game.unlockedTokens);
 
     f2d.velocityIterations = 4;
     _world = f2d.World(f2d.Vector2.zero());
@@ -197,9 +274,52 @@ class CoinPusher extends PositionComponent
     add(_LauncherOverlay(this)..priority = 100);
   }
 
+  f2d.Body _createTokenBody(
+    double physX,
+    double physY,
+    double radius, {
+    bool bullet = false,
+  }) {
+    final bodyDef = f2d.BodyDef(
+      type: f2d.BodyType.dynamic,
+      position: f2d.Vector2(physX, physY),
+      linearDamping: 2.0,
+      angularDamping: 1.0,
+      bullet: bullet,
+    );
+    final body = _world.createBody(bodyDef);
+    final shape = f2d.CircleShape()..radius = radius;
+    body.createFixture(
+      f2d.FixtureDef(shape, friction: 0.3, restitution: 0.2, density: 1.0),
+    );
+    return body;
+  }
+
+  Future<void> _addTokenFromQueue(QueueToken queueToken, f2d.Body body) async {
+    final (type, attr, level) = switch (queueToken) {
+      CoinQueueToken() => (TokenType.coin, null, 1),
+      DramaQueueToken() => (TokenType.drama, null, 1),
+      AttributeQueueToken(:final attribute, :final level) => (
+        TokenType.drama,
+        attribute,
+        level,
+      ),
+    };
+    final token = TokenBody(
+      type: type,
+      body: body,
+      physScale: _scale,
+      attribute: attr,
+      attributeLevel: level,
+    );
+    await token.loadSprite((path) => game.images.load(path));
+    _tokens.add(token);
+    add(token);
+  }
+
   Future<void> _spawnTokens() async {
     for (int i = 0; i < _tokenCount; i++) {
-      final queueToken = _randomSpawnToken();
+      final queueToken = _tokenQueue.randomToken();
       final diameter = TokenBody.diameterForQueueToken(queueToken);
       final radius = (diameter / 2) * _scale;
 
@@ -212,97 +332,12 @@ class CoinPusher extends PositionComponent
       final px = minX + _random.nextDouble() * (maxX - minX);
       final py = minY + _random.nextDouble() * (maxY - minY);
 
-      final bodyDef = f2d.BodyDef(
-        type: f2d.BodyType.dynamic,
-        position: f2d.Vector2(px * _scale, py * _scale),
-        linearDamping: 2.0,
-        angularDamping: 1.0,
-      );
-      final body = _world.createBody(bodyDef);
-      final shape = f2d.CircleShape()..radius = radius;
-      body.createFixture(
-        f2d.FixtureDef(shape, friction: 0.3, restitution: 0.2, density: 1.0),
-      );
-
-      final (type, attr, level) = switch (queueToken) {
-        CoinQueueToken() => (TokenType.coin, null, 1),
-        DramaQueueToken() => (TokenType.drama, null, 1),
-        AttributeQueueToken(:final attribute, :final level) => (
-          TokenType.drama,
-          attribute,
-          level,
-        ),
-      };
-      final token = TokenBody(
-        type: type,
-        body: body,
-        physScale: _scale,
-        attribute: attr,
-        attributeLevel: level,
-      );
-      await token.loadSprite((path) => game.images.load(path));
-      _tokens.add(token);
-      add(token);
+      final body = _createTokenBody(px * _scale, py * _scale, radius);
+      await _addTokenFromQueue(queueToken, body);
     }
   }
 
-  (int, Perk?) _attributeDoublerBonus(Attribute tokenAttr) {
-    var extra = 0;
-    Perk? flash;
-    final cast = game.currentCast;
-
-    for (final entry in perkDoublerMappings.entries) {
-      if (!game.ownedPerks.contains(entry.key)) continue;
-      for (final mapping in entry.value) {
-        if (tokenAttr != mapping.trigger) continue;
-        final n = cast.where((c) => c.attributes.contains(mapping.bonus)).length;
-        extra += n;
-        if (n > 0) flash ??= entry.key;
-      }
-    }
-
-    return (extra, flash);
-  }
-
-  void onTokenHitDropZone(TokenBody token) {
-    if (!token.collected) {
-      token.collected = true;
-      if (token.type == TokenType.coin) {
-        if (game.ownedPerks.contains(Perk.marketingBudget)) {
-          health = (health + HealthConfig.marketingBudgetCoinBonus)
-              .clamp(0, HealthConfig.maxHealth);
-        }
-      } else if (token.isAttributeToken && token.attribute != null) {
-        final matchCount = game.currentCast
-            .where((c) => c.attributes.contains(token.attribute))
-            .length;
-        final perChar = token.attributeLevel;
-        final (doublerCount, _) = _attributeDoublerBonus(token.attribute!);
-        final effectiveMatch = matchCount + doublerCount;
-        final multiplier = 1 + effectiveMatch * perChar;
-        var gain = HealthConfig.baseHealthGain * multiplier;
-        gain = _applyMemeLord(gain);
-        health = (health + gain).clamp(0, HealthConfig.maxHealth);
-      } else {
-        var gain = HealthConfig.baseHealthGain;
-        gain = _applyMemeLord(gain);
-        health = (health + gain).clamp(0, HealthConfig.maxHealth);
-      }
-      _pendingRemoval.add(token);
-    }
-  }
-
-  double _applyMemeLord(double gain) {
-    if (game.ownedPerks.contains(Perk.memeLord) &&
-        _random.nextDouble() < HealthConfig.memeLordChance) {
-      game.showPerkFlash(
-        Perk.memeLord.label,
-        duration: HealthConfig.memeLordFlashDuration,
-      );
-      return gain * HealthConfig.memeLordMultiplier;
-    }
-    return gain;
-  }
+  // ─── Effects ─────────────────────────────────────────────────────────────
 
   void _spawnSmoke(Vector2 position, double tokenSize) {
     final img = _smokeImage;
@@ -328,108 +363,16 @@ class CoinPusher extends PositionComponent
     );
   }
 
-  bool get launcherBlocked {
-    final p = _pusher;
-    if (p == null) return true;
-    if (!p.hasCompletedFirstPush) return true;
-    final pusherRightEdge = p.body.position.x / _scale + _pusherHalfW;
-    final outerLimit = p.startX + _pushDistance - _outerDisableMargin;
-    return pusherRightEdge >= outerLimit;
-  }
-
-  ui.Image? imageForQueueToken(QueueToken t) {
-    return switch (t) {
-      CoinQueueToken() => coinImage,
-      DramaQueueToken() => dramaImage,
-      AttributeQueueToken(attribute: final a) => _attributeImages[a],
-    };
-  }
-
-  Vector2 get launcherPosition {
-    return _pusher?.position.clone() ?? Vector2.zero();
-  }
-
-  void rotateLauncherUp(double dt) {
-    launcherAngle = (launcherAngle + _launcherAngleSpeed * dt).clamp(
-      _launcherAngleMin,
-      _launcherAngleMax,
-    );
-  }
-
-  void rotateLauncherDown(double dt) {
-    launcherAngle = (launcherAngle - _launcherAngleSpeed * dt).clamp(
-      _launcherAngleMin,
-      _launcherAngleMax,
-    );
-  }
-
-  void shoot() {
-    if (!launcherBlocked && _launcherCooldown <= 0) {
-      _launcherCooldown = _fireCooldown;
-      _shootAt(launcherPosition.x, launcherPosition.y, launcherAngle);
-    }
-  }
-
-  Future<void> _shootAt(double originX, double originY, double angle) async {
-    if (tokenQueue.isEmpty) return;
-    final queueToken = tokenQueue.removeLast();
-    _fillQueue();
-    final diameter = TokenBody.diameterForQueueToken(queueToken);
-    final radius = (diameter / 2) * _scale;
-
-    final offset = _launcherRadius + diameter / 2 + 4;
-    final spawnX = originX + cos(angle) * offset;
-    final spawnY = originY + sin(angle) * offset;
-
-    final bodyDef = f2d.BodyDef(
-      type: f2d.BodyType.dynamic,
-      position: f2d.Vector2(spawnX * _scale, spawnY * _scale),
-      linearDamping: 2.0,
-      angularDamping: 1.0,
-      bullet: true,
-    );
-    final body = _world.createBody(bodyDef);
-    final shape = f2d.CircleShape()..radius = radius;
-    body.createFixture(
-      f2d.FixtureDef(shape, friction: 0.3, restitution: 0.2, density: 1.0),
-    );
-
-    final vx = cos(angle) * _shootSpeed * _scale;
-    final vy = sin(angle) * _shootSpeed * _scale;
-    body.linearVelocity = f2d.Vector2(vx, vy);
-
-    final (type, attr, level) = switch (queueToken) {
-      CoinQueueToken() => (TokenType.coin, null, 1),
-      DramaQueueToken() => (TokenType.drama, null, 1),
-      AttributeQueueToken(:final attribute, :final level) => (
-        TokenType.drama,
-        attribute,
-        level,
-      ),
-    };
-    final token = TokenBody(
-      type: type,
-      body: body,
-      physScale: _scale,
-      attribute: attr,
-      attributeLevel: level,
-    );
-    await token.loadSprite((path) => game.images.load(path));
-    _tokens.add(token);
-    add(token);
-  }
+  // ─── Game Loop ───────────────────────────────────────────────────────────
 
   @override
   void update(double dt) {
     super.update(dt);
-    final s = game.currentSeason;
-    final multiplier = s <= HealthConfig.drainEarlySeasons
-        ? pow(HealthConfig.drainEarlyBase, s - 1)
-        : pow(HealthConfig.drainEarlyBase, HealthConfig.drainEarlySeasons - 1) *
-            pow(HealthConfig.drainLateBase, s - HealthConfig.drainEarlySeasons);
-    final drainRate = HealthConfig.baseDrainRate * multiplier;
+
+    final drainRate = _scoring.computeDrainRate(game.currentSeason);
     health = (health - dt * drainRate).clamp(0, HealthConfig.maxHealth);
     if (health <= 0) game.triggerGameOver();
+
     if (_launcherCooldown > 0) _launcherCooldown -= dt;
     _world.stepDt(dt);
 
@@ -444,6 +387,8 @@ class CoinPusher extends PositionComponent
     }
     _pendingRemoval.clear();
   }
+
+  // ─── Rendering ───────────────────────────────────────────────────────────
 
   static const _bgColor = 0xFF696a6a;
 
