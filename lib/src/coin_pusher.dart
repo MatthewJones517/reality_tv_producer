@@ -101,7 +101,7 @@ class CoinPusher extends PositionComponent
       cast: game.currentCast,
     );
 
-    if (result.isCoin && (_pusher?.hasCompletedFirstPush ?? false)) {
+    if (!result.isCoin && (_pusher?.hasCompletedFirstPush ?? false)) {
       AudioService.instance.playSfx(Sfx.coin);
     }
     if (result.healthDelta > 0) {
@@ -112,6 +112,7 @@ class CoinPusher extends PositionComponent
         result.perkFlashName!,
         duration: result.perkFlashDuration,
       );
+      AudioService.instance.playSfx(Sfx.memeLord);
     }
 
     _pendingRemoval.add(token);
@@ -200,7 +201,7 @@ class CoinPusher extends PositionComponent
 
     _tokenQueue = TokenQueue(unlockedTokens: () => game.unlockedTokens);
 
-    f2d.velocityIterations = 2;
+    f2d.velocityIterations = 4;
     f2d.positionIterations = 2;
     _world = f2d.World(f2d.Vector2.zero());
     _world.setContactListener(_ContactListener(this));

@@ -4,7 +4,7 @@ import 'package:flame_audio/flame_audio.dart';
 
 enum MusicTrack { intro, playfield, seasonChange }
 
-enum Sfx { coin, continuePress, fail, win, shoot, roll, purchase }
+enum Sfx { coin, continuePress, fail, win, shoot, roll, purchase, memeLord }
 
 class AudioService {
   static final AudioService instance = AudioService._();
@@ -16,13 +16,14 @@ class AudioService {
 
   static const _sfxVolume = <Sfx, double>{
     Sfx.coin: 0.25,
-    Sfx.fail: 0.75,
+    Sfx.fail: 0.5,
     Sfx.shoot: 0.4,
   };
 
-  static const _pooledSfx = <Sfx, int>{Sfx.coin: 6, Sfx.shoot: 6};
-
-  final Map<Sfx, AudioPool> _pools = {};
+  static const _pooledSfx = <Sfx, int>{
+    Sfx.coin: 6,
+    Sfx.shoot: 6,
+  };
 
   static const _musicVolume = <MusicTrack, double>{
     MusicTrack.seasonChange: 0.75,
@@ -42,13 +43,15 @@ class AudioService {
     Sfx.shoot: 'sfx/shoot.mp3',
     Sfx.roll: 'sfx/roll.mp3',
     Sfx.purchase: 'sfx/purchase.mp3',
+    Sfx.memeLord: 'sfx/meme_lord.mp3',
   };
+
+  final Map<Sfx, AudioPool> _pools = {};
 
   Future<void> init() async {
     if (_initialized) return;
     try {
       FlameAudio.audioCache.prefix = 'assets/';
-      await FlameAudio.audioCache.loadAll([..._sfxPaths.values]);
 
       for (final entry in _pooledSfx.entries) {
         final path = _sfxPaths[entry.key];
@@ -57,6 +60,14 @@ class AudioService {
           path,
           maxPlayers: entry.value,
         );
+      }
+
+      final nonPooledPaths = _sfxPaths.entries
+          .where((e) => !_pooledSfx.containsKey(e.key))
+          .map((e) => e.value)
+          .toList();
+      if (nonPooledPaths.isNotEmpty) {
+        await FlameAudio.audioCache.loadAll(nonPooledPaths);
       }
 
       _initialized = true;
