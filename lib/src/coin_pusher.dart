@@ -469,7 +469,7 @@ class CoinPusher extends PositionComponent
     final s = game.currentSeason;
     final multiplier = s <= 4
         ? pow(1.2, s - 1)
-        : pow(1.2, 3) * pow(1.15, s - 4);
+        : pow(1.2, 3) * pow(1.18, s - 4);
     final drainRate = 3.0 * multiplier;
     health = (health - dt * drainRate).clamp(0, 100);
     if (health <= 0) game.triggerGameOver();
