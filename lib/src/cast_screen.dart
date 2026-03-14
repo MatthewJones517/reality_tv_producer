@@ -7,6 +7,7 @@ import 'package:flutter/painting.dart';
 import 'character.dart';
 import 'character_generator.dart';
 import 'game.dart';
+import 'game_config.dart';
 
 class CastScreen extends PositionComponent
     with HasGameReference<RealityTvGame> {
@@ -37,7 +38,7 @@ class CastScreen extends PositionComponent
   Future<void> onLoad() async {
     size = Vector2(1920, 1080);
 
-    final bgImage = await game.images.load('assets/title_screen/bg.png');
+    final bgImage = await game.images.load(Assets.titleBg);
     add(SpriteComponent(sprite: Sprite(bgImage), size: Vector2(1920, 1080)));
 
     add(_DarkPanel(
@@ -59,10 +60,10 @@ class CastScreen extends PositionComponent
       strokeWidth: 6,
     );
 
-    if (initialCast != null && initialCast!.length == 4) {
+    if (initialCast != null && initialCast!.length == GameConfig.castSize) {
       cast.addAll(initialCast!);
     } else {
-      for (int i = 0; i < 4; i++) {
+      for (int i = 0; i < GameConfig.castSize; i++) {
         cast.add(await CharacterGenerator.generate());
       }
     }
@@ -71,7 +72,7 @@ class CastScreen extends PositionComponent
     const spacing = 400.0;
     final startX = 960.0 - (spacing * 1.5);
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < GameConfig.castSize; i++) {
       final character = cast[i];
       final centerX = startX + (spacing * i);
       final baseY = 280.0;

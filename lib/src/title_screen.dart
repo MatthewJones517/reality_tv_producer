@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/painting.dart';
 
 import 'game.dart';
+import 'game_config.dart';
 
 class _DarkPanel extends PositionComponent {
   _DarkPanel({required super.position, required super.size, required super.anchor});
@@ -23,7 +24,7 @@ class TitleScreen extends PositionComponent
   Future<void> onLoad() async {
     size = Vector2(1920, 1080);
 
-    final bgImage = await game.images.load('assets/title_screen/bg.png');
+    final bgImage = await game.images.load(Assets.titleBg);
     add(SpriteComponent(
       sprite: Sprite(bgImage),
       size: Vector2(1920, 1080),

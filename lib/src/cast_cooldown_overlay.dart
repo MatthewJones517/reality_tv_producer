@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'game.dart';
+import 'game_config.dart';
 
 class CastCooldownOverlay extends StatefulWidget {
   final RealityTvGame game;
@@ -15,9 +16,9 @@ class CastCooldownOverlay extends StatefulWidget {
 }
 
 class _CastCooldownOverlayState extends State<CastCooldownOverlay> {
-  static const _fontFamily = 'VT323';
   static const _spaceDelaySeconds = 5;
 
+  final _focusNode = FocusNode();
   bool _spaceEnabled = false;
   int _remainingSeconds = _spaceDelaySeconds;
   Timer? _countdownTimer;
@@ -40,6 +41,7 @@ class _CastCooldownOverlayState extends State<CastCooldownOverlay> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -52,7 +54,7 @@ class _CastCooldownOverlayState extends State<CastCooldownOverlay> {
         child: Padding(
           padding: const EdgeInsets.only(bottom: 48),
           child: KeyboardListener(
-            focusNode: FocusNode()..requestFocus(),
+            focusNode: _focusNode,
             autofocus: true,
             onKeyEvent: (event) {
               if (!_spaceEnabled) return;
@@ -75,12 +77,12 @@ class _CastCooldownOverlayState extends State<CastCooldownOverlay> {
                         ? 'Press Space to Continue'
                         : 'Continue in $_remainingSeconds seconds',
                     style: TextStyle(
-                      fontFamily: _fontFamily,
+                      fontFamily: AppTheme.fontFamily,
                       fontSize: 36,
                       color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
-                  if (widget.game.currentSeason >= 2) ...[
+                  if (widget.game.currentSeason >= GameConfig.rerollSeasonMinimum) ...[
                     const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: widget.game.coins >= widget.game.rerollCost
@@ -90,13 +92,13 @@ class _CastCooldownOverlayState extends State<CastCooldownOverlay> {
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF1493),
+                        backgroundColor: AppTheme.pink,
                         disabledBackgroundColor: Colors.grey,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 12),
                         textStyle: const TextStyle(
-                          fontFamily: _fontFamily,
+                          fontFamily: AppTheme.fontFamily,
                           fontSize: 24,
                         ),
                       ),
@@ -105,7 +107,7 @@ class _CastCooldownOverlayState extends State<CastCooldownOverlay> {
                         children: [
                           const Text('Reroll contestants ('),
                           Image.asset(
-                            'assets/playfield/coin.png',
+                            Assets.coin,
                             width: 24,
                             height: 24,
                             fit: BoxFit.contain,

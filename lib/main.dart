@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'src/cast_cooldown_overlay.dart';
 import 'src/game.dart';
+import 'src/game_config.dart';
 import 'src/game_over_screen.dart';
 import 'src/how_to_play_screen.dart';
 import 'src/show_name_screen.dart';
@@ -19,17 +20,17 @@ void main() {
           game: game,
           focusNode: gameFocusNode,
           overlayBuilderMap: {
-            'showName': (context, game) =>
+            Overlays.showName: (context, game) =>
                 ShowNameScreen(game: game as RealityTvGame),
-            'howToPlay': (context, game) =>
+            Overlays.howToPlay: (context, game) =>
                 HowToPlayScreen(game: game as RealityTvGame),
-            'castCooldown': (context, game) =>
+            Overlays.castCooldown: (context, game) =>
                 CastCooldownOverlay(game: game as RealityTvGame),
-            'gameOver': (context, game) =>
+            Overlays.gameOver: (context, game) =>
                 GameOverScreen(game: game as RealityTvGame),
-            'shop': (context, game) =>
+            Overlays.shop: (context, game) =>
                 ShopScreen(game: game as RealityTvGame),
-            'win': (context, game) =>
+            Overlays.win: (context, game) =>
                 WinScreen(game: game as RealityTvGame),
           },
       ),

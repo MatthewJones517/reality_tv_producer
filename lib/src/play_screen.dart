@@ -8,6 +8,7 @@ import 'package:flutter/painting.dart';
 import 'character.dart';
 import 'coin_pusher.dart';
 import 'game.dart';
+import 'game_config.dart';
 
 class PlayScreen extends PositionComponent
     with HasGameReference<RealityTvGame> {
@@ -18,7 +19,6 @@ class PlayScreen extends PositionComponent
 
   static const _topBarHeight = 140.0;
   static const _bottomBarHeight = 80.0;
-  static const _pink = Color(0xFFFF1493);
 
   final List<Character> cast;
   final int initialCoins;
@@ -44,12 +44,12 @@ class PlayScreen extends PositionComponent
     add(_BorderLine(
       position: Vector2(0, _topBarHeight),
       size: Vector2(1920, 3),
-      color: _pink,
+      color: AppTheme.pink,
     ));
     add(_BorderLine(
       position: Vector2(0, 1080 - _bottomBarHeight),
       size: Vector2(1920, 3),
-      color: _pink,
+      color: AppTheme.pink,
     ));
 
     const charSlotWidth = 340.0;
@@ -67,7 +67,7 @@ class PlayScreen extends PositionComponent
         position: Vector2(slotX, 0),
         size: Vector2(charSlotWidth, _topBarHeight),
         color: const Color(0xFF1A1A2E),
-        borderColor: _pink,
+        borderColor: AppTheme.pink,
         borderWidth: 2,
       ));
 
@@ -113,7 +113,7 @@ class PlayScreen extends PositionComponent
           style: const TextStyle(
             fontFamily: 'VT323',
             fontSize: 30,
-            color: _pink,
+            color: AppTheme.pink,
           ),
         ),
       ));
@@ -124,7 +124,7 @@ class PlayScreen extends PositionComponent
       position: Vector2(ratingsSlotX, 0),
       size: Vector2(ratingsWidth, _topBarHeight),
       color: const Color(0xFF1A1A2E),
-      borderColor: _pink,
+      borderColor: AppTheme.pink,
       borderWidth: 2,
     ));
 
@@ -137,7 +137,7 @@ class PlayScreen extends PositionComponent
           fontFamily: 'CinzelDecorative',
           fontSize: 28,
           fontWeight: FontWeight.bold,
-          color: _pink,
+          color: AppTheme.pink,
         ),
       ),
     ));
@@ -180,7 +180,6 @@ class _PerkFlashDisplay extends PositionComponent {
 
   final RealityTvGame game;
 
-  static const _pink = Color(0xFFFF1493);
   static const _yellow = Color(0xFFFFFF00);
   static const _fontSize = 96.0;
   static const _strokeWidth = 6.0;
@@ -190,7 +189,7 @@ class _PerkFlashDisplay extends PositionComponent {
     final name = game.perkFlashName;
     if (name == null || game.perkFlashTimer <= 0) return;
     final t = (math.sin(game.perkFlashTimer * 10) + 1) / 2;
-    final color = Color.lerp(_pink, _yellow, t)!;
+    final color = Color.lerp(AppTheme.pink, _yellow, t)!;
 
     final strokePaint = TextPaint(
       style: TextStyle(
@@ -256,8 +255,8 @@ class _HealthBarDisplay extends PositionComponent {
 
   @override
   void render(ui.Canvas canvas) {
-    final h = coinPusher.health.clamp(0.0, 100.0);
-    final fillFraction = h / 100;
+    final h = coinPusher.health.clamp(0.0, HealthConfig.maxHealth);
+    final fillFraction = h / HealthConfig.maxHealth;
 
     final barRect = ui.Rect.fromCenter(
       center: ui.Offset.zero,

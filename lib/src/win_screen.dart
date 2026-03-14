@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'game.dart';
+import 'game_config.dart';
 
 class WinScreen extends StatefulWidget {
   final RealityTvGame game;
@@ -15,10 +16,9 @@ class WinScreen extends StatefulWidget {
 }
 
 class _WinScreenState extends State<WinScreen> {
-  static const _pink = Color(0xFFFF1493);
-  static const _fontFamily = 'VT323';
   static const _spaceDelaySeconds = 5;
 
+  final _focusNode = FocusNode();
   bool _spaceEnabled = false;
   int _remainingSeconds = _spaceDelaySeconds;
   Timer? _countdownTimer;
@@ -41,6 +41,7 @@ class _WinScreenState extends State<WinScreen> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -49,7 +50,7 @@ class _WinScreenState extends State<WinScreen> {
     return Material(
       color: const Color(0xCC000000),
       child: KeyboardListener(
-        focusNode: FocusNode()..requestFocus(),
+        focusNode: _focusNode,
         autofocus: true,
         onKeyEvent: (event) {
           if (!_spaceEnabled) return;
@@ -66,7 +67,7 @@ class _WinScreenState extends State<WinScreen> {
             decoration: BoxDecoration(
               color: const Color(0xEE111111),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: _pink, width: 3),
+              border: Border.all(color: AppTheme.pink, width: 3),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -79,17 +80,17 @@ class _WinScreenState extends State<WinScreen> {
                       TextSpan(
                         text: 'Congratulations!\n',
                         style: TextStyle(
-                          fontFamily: 'CinzelDecorative',
+                          fontFamily: AppTheme.headingFontFamily,
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
-                          color: _pink,
+                          color: AppTheme.pink,
                         ),
                       ),
                       TextSpan(
                         text:
                             '${widget.game.showName ?? "Your show"} has reached syndication! You win! Can you do it again?',
                         style: TextStyle(
-                          fontFamily: _fontFamily,
+                          fontFamily: AppTheme.fontFamily,
                           fontSize: 42,
                           color: Colors.white.withValues(alpha: 0.6),
                         ),
@@ -103,7 +104,7 @@ class _WinScreenState extends State<WinScreen> {
                       ? 'Press Space to Continue'
                       : 'Continue in $_remainingSeconds seconds',
                   style: TextStyle(
-                    fontFamily: _fontFamily,
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 36,
                     color: Colors.white.withValues(alpha: 0.6),
                   ),

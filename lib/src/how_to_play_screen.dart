@@ -2,26 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'game.dart';
+import 'game_config.dart';
 
-class HowToPlayScreen extends StatelessWidget {
+class HowToPlayScreen extends StatefulWidget {
   final RealityTvGame game;
 
   const HowToPlayScreen({super.key, required this.game});
 
-  static const _pink = Color(0xFFFF1493);
-  static const _fontFamily = 'VT323';
+  @override
+  State<HowToPlayScreen> createState() => _HowToPlayScreenState();
+}
+
+class _HowToPlayScreenState extends State<HowToPlayScreen> {
+
+  final _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: const Color(0xCC000000),
       child: KeyboardListener(
-        focusNode: FocusNode()..requestFocus(),
+        focusNode: _focusNode,
         autofocus: true,
         onKeyEvent: (event) {
           if (event is KeyDownEvent &&
               event.logicalKey == LogicalKeyboardKey.space) {
-            game.finishHowToPlay();
+            widget.game.finishHowToPlay();
           }
         },
         child: Center(
@@ -33,7 +45,7 @@ class HowToPlayScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xEE111111),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: _pink, width: 3),
+                border: Border.all(color: AppTheme.pink, width: 3),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -42,10 +54,10 @@ class HowToPlayScreen extends StatelessWidget {
                   const Text(
                     'How To Play',
                     style: TextStyle(
-                      fontFamily: 'CinzelDecorative',
+                      fontFamily: AppTheme.headingFontFamily,
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
-                      color: _pink,
+                      color: AppTheme.pink,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -53,7 +65,7 @@ class HowToPlayScreen extends StatelessWidget {
                     'Get your show renewed for 5 seasons and reach syndication!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontFamily: _fontFamily,
+                      fontFamily: AppTheme.fontFamily,
                       fontSize: 30,
                       color: Colors.white.withValues(alpha: 0.9),
                     ),
@@ -66,13 +78,13 @@ class HowToPlayScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   _buildTokenRow(
-                    'assets/playfield/Drama_Chip.png',
+                    Assets.dramaChip,
                     64,
                     'Push drama tokens to increase ratings.',
                   ),
                   const SizedBox(height: 24),
                   _buildTokenRow(
-                    'assets/playfield/coin.png',
+                    Assets.coin,
                     38,
                     'Push coin tokens to buy stuff.',
                   ),
@@ -86,7 +98,7 @@ class HowToPlayScreen extends StatelessWidget {
                   Text(
                     'Press Space to Continue',
                     style: TextStyle(
-                      fontFamily: _fontFamily,
+                      fontFamily: AppTheme.fontFamily,
                       fontSize: 36,
                       color: Colors.white.withValues(alpha: 0.6),
                     ),
@@ -119,7 +131,7 @@ class HowToPlayScreen extends StatelessWidget {
           child: Text(
             text,
             style: const TextStyle(
-              fontFamily: _fontFamily,
+              fontFamily: AppTheme.fontFamily,
               fontSize: 32,
               color: Colors.white,
             ),
@@ -141,7 +153,7 @@ class HowToPlayScreen extends StatelessWidget {
           child: Text(
             text,
             style: const TextStyle(
-              fontFamily: _fontFamily,
+              fontFamily: AppTheme.fontFamily,
               fontSize: 32,
               color: Colors.white,
             ),

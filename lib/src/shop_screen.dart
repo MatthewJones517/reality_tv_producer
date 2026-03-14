@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'character.dart';
 import 'game.dart';
+import 'game_config.dart';
 import 'perk.dart';
-
-const _pink = Color(0xFFFF1493);
-const _fontFamily = 'VT323';
 
 class ShopScreen extends StatefulWidget {
   final RealityTvGame game;
@@ -19,20 +17,10 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  static int _costForLevel(int currentLevel) {
-    return switch (currentLevel) {
-      0 => 50,
-      1 => 100,
-      2 => 150,
-      _ => 200,
-    };
-  }
-
   late List<Attribute> _options;
   late List<Perk> _perkOptions;
   final _random = Random();
   final Set<Attribute> _purchasedThisSession = {};
-  static const _perkCost = 175;
   final _scrollController = ScrollController();
 
   @override
@@ -56,11 +44,11 @@ class _ShopScreenState extends State<ShopScreen> {
     final eligible = <Attribute>[];
     for (final attr in Attribute.values) {
       final level = widget.game.unlockedTokens[attr] ?? 0;
-      if (level >= 3) continue;
+      if (level >= GameConfig.maxAttributeLevel) continue;
       eligible.add(attr);
     }
 
-    final isFirstShop = widget.game.currentEpisode == 3;
+    final isFirstShop = widget.game.currentEpisode == GameConfig.shopTriggerInterval;
     final castAttributes = widget.game.currentCast
         .expand((c) => c.attributes)
         .toSet();
@@ -70,13 +58,13 @@ class _ShopScreenState extends State<ShopScreen> {
     List<Attribute> options;
     if (isFirstShop &&
         eligibleMatchingCast.isNotEmpty &&
-        eligible.length >= 3) {
+        eligible.length >= ShopConfig.shopOptionsCount) {
       final match = eligibleMatchingCast[_random.nextInt(eligibleMatchingCast.length)];
       final rest = eligible.where((a) => a != match).toList()..shuffle(_random);
       options = [match, ...rest.take(2)];
     } else {
       eligible.shuffle(_random);
-      options = eligible.take(3).toList();
+      options = eligible.take(ShopConfig.shopOptionsCount).toList();
     }
 
     final unlocked = widget.game.unlockedTokens;
@@ -91,34 +79,19 @@ class _ShopScreenState extends State<ShopScreen> {
           ..shuffle(_random);
     setState(() {
       _options = options;
-      _perkOptions = eligiblePerks.take(3).toList();
+      _perkOptions = eligiblePerks.take(ShopConfig.shopOptionsCount).toList();
     });
   }
 
   void _purchasePerk(Perk perk) {
-    if (widget.game.coins < _perkCost) return;
-    if (widget.game.ownedPerks.contains(perk)) return;
-    setState(() {
-      widget.game.coins -= _perkCost;
-      widget.game.ownedPerks.add(perk);
-      _pickOptions();
-    });
+    if (!widget.game.purchasePerk(perk)) return;
+    setState(() => _pickOptions());
   }
 
   void _purchase(Attribute attr) {
-    final current = widget.game.unlockedTokens[attr] ?? 0;
-    if (current >= 3) return;
-    final cost = _costForLevel(current);
-    if (widget.game.coins < cost) return;
-
+    if (!widget.game.purchaseAttribute(attr)) return;
     setState(() {
-      widget.game.coins -= cost;
-      final isFirstUnlock = current == 0;
-      widget.game.unlockedTokens[attr] = current + 1;
       _purchasedThisSession.add(attr);
-      if (isFirstUnlock) {
-        widget.game.convertDramaToAttribute(attr);
-      }
     });
   }
 
@@ -140,11 +113,11 @@ class _ShopScreenState extends State<ShopScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xEE111111),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: _pink, width: 3),
+                  border: Border.all(color: AppTheme.pink, width: 3),
                 ),
                 child: ScrollbarTheme(
                   data: ScrollbarThemeData(
-                    thumbColor: WidgetStateProperty.all(_pink),
+                    thumbColor: WidgetStateProperty.all(AppTheme.pink),
                   ),
                   child: Scrollbar(
                     controller: _scrollController,
@@ -184,14 +157,14 @@ class _ShopScreenState extends State<ShopScreen> {
                                                   .game
                                                   .unlockedTokens[attr] ??
                                               0;
-                                          final cost = _costForLevel(level);
+                                          final cost = ShopConfig.costForLevel(level);
                                           final alreadyPurchased =
                                               _purchasedThisSession.contains(
                                                 attr,
                                               );
                                           final canBuy =
                                               !alreadyPurchased &&
-                                              level < 3 &&
+                                              level < GameConfig.maxAttributeLevel &&
                                               widget.game.coins >= cost;
                                           return _ShopOption(
                                             attribute: attr,
@@ -225,12 +198,12 @@ class _ShopScreenState extends State<ShopScreen> {
                               ),
                               Container(
                                 width: 2,
-                                color: _pink.withValues(alpha: 0.5),
+                                color: AppTheme.pink.withValues(alpha: 0.5),
                               ),
                               _PerksPanel(
                                 perkOptions: _perkOptions,
                                 coins: widget.game.coins,
-                                perkCost: _perkCost,
+                                perkCost: ShopConfig.perkCost,
                                 onPurchasePerk: _purchasePerk,
                               ),
                             ],
@@ -245,14 +218,14 @@ class _ShopScreenState extends State<ShopScreen> {
               ElevatedButton(
                 onPressed: () => widget.game.finishShop(),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _pink,
+                  backgroundColor: AppTheme.pink,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 48,
                     vertical: 16,
                   ),
                   textStyle: const TextStyle(
-                    fontFamily: _fontFamily,
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 36,
                   ),
                 ),
@@ -288,18 +261,18 @@ class _CoinCostButton extends StatelessWidget {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: _pink,
+        backgroundColor: AppTheme.pink,
         disabledBackgroundColor: Colors.grey,
         foregroundColor: Colors.white,
         padding: padding,
-        textStyle: TextStyle(fontFamily: _fontFamily, fontSize: fontSize),
+        textStyle: TextStyle(fontFamily: AppTheme.fontFamily, fontSize: fontSize),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text('$label ('),
           Image.asset(
-            'assets/playfield/coin.png',
+            Assets.coin,
             width: fontSize,
             height: fontSize,
             fit: BoxFit.contain,
@@ -333,7 +306,7 @@ class _ShopHeader extends StatelessWidget {
         Text(
           'Coins: $coins',
           style: const TextStyle(
-            fontFamily: _fontFamily,
+            fontFamily: AppTheme.fontFamily,
             fontSize: 32,
             color: Colors.white,
           ),
@@ -345,10 +318,10 @@ class _ShopHeader extends StatelessWidget {
               child: const Text(
                 'Shop',
                 style: TextStyle(
-                  fontFamily: 'CinzelDecorative',
+                  fontFamily: AppTheme.headingFontFamily,
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
-                  color: _pink,
+                  color: AppTheme.pink,
                 ),
               ),
             ),
@@ -374,11 +347,6 @@ class _UnlockedChipsList extends StatelessWidget {
 
   const _UnlockedChipsList({required this.unlockedTokens});
 
-  static String _chipAssetPath(Attribute attr) {
-    final name = attr.name;
-    return 'assets/playfield/${name[0].toUpperCase()}${name.substring(1)}_Chip.png';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -388,10 +356,10 @@ class _UnlockedChipsList extends StatelessWidget {
         const Text(
           'Unlocked Chips',
           style: TextStyle(
-            fontFamily: 'CinzelDecorative',
+            fontFamily: AppTheme.headingFontFamily,
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: _pink,
+            color: AppTheme.pink,
           ),
         ),
         const SizedBox(height: 16),
@@ -404,7 +372,7 @@ class _UnlockedChipsList extends StatelessWidget {
               'matching attribute',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontFamily: _fontFamily,
+                fontFamily: AppTheme.fontFamily,
                 fontSize: 22,
                 color: Colors.white.withValues(alpha: 0.7),
               ),
@@ -421,18 +389,18 @@ class _UnlockedChipsList extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Image.asset(
-                        _chipAssetPath(e.key),
+                        Assets.chipPath(e.key),
                         width: 48,
                         height: 48,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) =>
+                        errorBuilder: (_, _, _) =>
                             const SizedBox(width: 48, height: 48),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         '${e.key.label} Lv.${e.value}',
                         style: const TextStyle(
-                          fontFamily: _fontFamily,
+                          fontFamily: AppTheme.fontFamily,
                           fontSize: 28,
                           color: Colors.white,
                         ),
@@ -463,10 +431,10 @@ class _UnlockedPerksList extends StatelessWidget {
         const Text(
           'Unlocked Perks',
           style: TextStyle(
-            fontFamily: 'CinzelDecorative',
+            fontFamily: AppTheme.headingFontFamily,
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: _pink,
+            color: AppTheme.pink,
           ),
         ),
         const SizedBox(height: 16),
@@ -479,16 +447,16 @@ class _UnlockedPerksList extends StatelessWidget {
                 Text(
                   perk.label,
                   style: const TextStyle(
-                    fontFamily: _fontFamily,
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF87CEEB),
+                    color: AppTheme.perkLabelColor,
                   ),
                 ),
                 Text(
                   perk.description,
                   style: const TextStyle(
-                    fontFamily: _fontFamily,
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 18,
                     color: Colors.white,
                   ),
@@ -527,17 +495,17 @@ class _PerkCard extends StatelessWidget {
           Text(
             perk.label,
             style: const TextStyle(
-              fontFamily: _fontFamily,
+              fontFamily: AppTheme.fontFamily,
               fontSize: 26,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF87CEEB),
+              color: AppTheme.perkLabelColor,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             perk.description,
             style: const TextStyle(
-              fontFamily: _fontFamily,
+              fontFamily: AppTheme.fontFamily,
               fontSize: 20,
               color: Colors.white,
             ),
@@ -581,10 +549,10 @@ class _PerksPanel extends StatelessWidget {
             const Text(
               'Perks',
               style: TextStyle(
-                fontFamily: 'CinzelDecorative',
+                fontFamily: AppTheme.headingFontFamily,
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: _pink,
+                color: AppTheme.pink,
               ),
             ),
             const SizedBox(height: 16),
@@ -592,7 +560,7 @@ class _PerksPanel extends StatelessWidget {
               const Text(
                 'No perks available right now.',
                 style: TextStyle(
-                  fontFamily: _fontFamily,
+                  fontFamily: AppTheme.fontFamily,
                   fontSize: 22,
                   color: Colors.white,
                 ),
@@ -639,11 +607,6 @@ class _ShopOption extends StatelessWidget {
     required this.onPurchase,
   });
 
-  static String _chipAssetPath(Attribute attr) {
-    final name = attr.name;
-    return 'assets/playfield/${name[0].toUpperCase()}${name.substring(1)}_Chip.png';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Opacity(
@@ -655,7 +618,7 @@ class _ShopOption extends StatelessWidget {
           color: const Color(0xFF1A1A2E),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: canBuy ? _pink : Colors.grey.withValues(alpha: 0.5),
+            color: canBuy ? AppTheme.pink : Colors.grey.withValues(alpha: 0.5),
             width: 2,
           ),
         ),
@@ -663,7 +626,7 @@ class _ShopOption extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
-              _chipAssetPath(attribute),
+              Assets.chipPath(attribute),
               width: 80,
               height: 80,
               fit: BoxFit.contain,
@@ -673,7 +636,7 @@ class _ShopOption extends StatelessWidget {
             Text(
               attribute.label,
               style: const TextStyle(
-                fontFamily: _fontFamily,
+                fontFamily: AppTheme.fontFamily,
                 fontSize: 24,
                 color: Colors.white,
               ),
@@ -682,7 +645,7 @@ class _ShopOption extends StatelessWidget {
               Text(
                 'Level $level',
                 style: TextStyle(
-                  fontFamily: _fontFamily,
+                  fontFamily: AppTheme.fontFamily,
                   fontSize: 20,
                   color: Colors.white.withValues(alpha: 0.7),
                 ),
@@ -691,7 +654,7 @@ class _ShopOption extends StatelessWidget {
             ElevatedButton(
               onPressed: canBuy ? onPurchase : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _pink,
+                backgroundColor: AppTheme.pink,
                 disabledBackgroundColor: Colors.grey,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
@@ -701,7 +664,7 @@ class _ShopOption extends StatelessWidget {
               ),
               child: Text(
                 isLevelUp ? 'Level up ($cost)' : 'Unlock ($cost)',
-                style: const TextStyle(fontFamily: _fontFamily, fontSize: 22),
+                style: const TextStyle(fontFamily: AppTheme.fontFamily, fontSize: 22),
               ),
             ),
           ],

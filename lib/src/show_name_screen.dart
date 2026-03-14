@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'game.dart';
+import 'game_config.dart';
 
 class ShowNameScreen extends StatefulWidget {
   final RealityTvGame game;
@@ -41,8 +42,6 @@ class _ShowNameScreenState extends State<ShowNameScreen> {
     widget.game.submitShowName(name);
   }
 
-  static const _pink = Color(0xFFFF1493);
-  static const _fontFamily = 'VT323';
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +54,7 @@ class _ShowNameScreenState extends State<ShowNameScreen> {
           decoration: BoxDecoration(
             color: const Color(0xEE111111),
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: _pink, width: 3),
+            border: Border.all(color: AppTheme.pink, width: 3),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -65,7 +64,7 @@ class _ShowNameScreenState extends State<ShowNameScreen> {
                 'Reality TV producer in Hollywood!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: _fontFamily,
+                  fontFamily: AppTheme.fontFamily,
                   fontSize: 40,
                   color: Colors.white,
                 ),
@@ -75,9 +74,9 @@ class _ShowNameScreenState extends State<ShowNameScreen> {
                 "What's the name of your brand new show?",
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontFamily: _fontFamily,
+                  fontFamily: AppTheme.fontFamily,
                   fontSize: 36,
-                  color: _pink,
+                  color: AppTheme.pink,
                 ),
               ),
               const SizedBox(height: 24),
@@ -87,7 +86,7 @@ class _ShowNameScreenState extends State<ShowNameScreen> {
                 maxLength: 30,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontFamily: _fontFamily,
+                  fontFamily: AppTheme.fontFamily,
                   fontSize: 36,
                   color: Colors.white,
                 ),
@@ -96,24 +95,24 @@ class _ShowNameScreenState extends State<ShowNameScreen> {
                 ],
                 decoration: InputDecoration(
                   counterStyle: const TextStyle(
-                    fontFamily: _fontFamily,
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 18,
                     color: Colors.grey,
                   ),
                   hintText: 'Enter show name...',
                   hintStyle: TextStyle(
-                    fontFamily: _fontFamily,
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 36,
                     color: Colors.white.withValues(alpha: 0.3),
                   ),
                   errorText: _showError ? 'Your show needs a name!' : null,
                   errorStyle: const TextStyle(
-                    fontFamily: _fontFamily,
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 22,
                     color: Colors.redAccent,
                   ),
                   enabledBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: _pink, width: 2),
+                    borderSide: BorderSide(color: AppTheme.pink, width: 2),
                     borderRadius: BorderRadius.all(Radius.circular(12)),
                   ),
                   focusedBorder: const OutlineInputBorder(
@@ -142,7 +141,7 @@ class _ShowNameScreenState extends State<ShowNameScreen> {
               ElevatedButton(
                 onPressed: _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _pink,
+                  backgroundColor: AppTheme.pink,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 48,
@@ -154,7 +153,7 @@ class _ShowNameScreenState extends State<ShowNameScreen> {
                 ),
                 child: const Text(
                   'Continue',
-                  style: TextStyle(fontFamily: _fontFamily, fontSize: 36),
+                  style: TextStyle(fontFamily: AppTheme.fontFamily, fontSize: 36),
                 ),
               ),
             ],

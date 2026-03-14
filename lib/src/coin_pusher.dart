@@ -7,6 +7,7 @@ import 'package:forge2d/forge2d.dart' as f2d;
 
 import 'character.dart';
 import 'game.dart';
+import 'game_config.dart';
 import 'perk.dart';
 import 'pusher_body.dart';
 import 'token_body.dart';
@@ -51,7 +52,7 @@ class CoinPusher extends PositionComponent
   final List<TokenBody> _pendingRemoval = [];
   final List<QueueToken> tokenQueue = [];
   int coinsCollected = 0;
-  double health = 100.0;
+  double health = HealthConfig.initialHealth;
   double launcherAngle = 0;
   double _launcherCooldown = 0;
 
@@ -72,14 +73,13 @@ class CoinPusher extends PositionComponent
 
   QueueToken _randomQueueToken() {
     final r = _random.nextDouble();
-    if (r < 0.90) return CoinQueueToken();
+    if (r < SpawnConfig.coinSpawnRatio) return CoinQueueToken();
     return _randomDramaOrAttribute();
   }
 
-  /// 90% coin, 10% drama/attribute for board spawn.
   QueueToken _randomSpawnToken() {
     final r = _random.nextDouble();
-    if (r < 0.90) return CoinQueueToken();
+    if (r < SpawnConfig.coinSpawnRatio) return CoinQueueToken();
     return _randomDramaOrAttribute();
   }
 
@@ -88,7 +88,7 @@ class CoinPusher extends PositionComponent
       (t) => t.type == TokenType.drama && t.attribute == null,
     );
     final list = dramaTokens.toList();
-    final count = (list.length / 3).floor();
+    final count = (list.length / SpawnConfig.dramaConvertFraction).floor();
     if (count <= 0) return;
     for (int i = 0; i < count; i++) {
       final token = list[i];
@@ -104,22 +104,20 @@ class CoinPusher extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    _launcherImage = await game.images.load('assets/playfield/launcher.png');
-    _edgeImage = await game.images.load('assets/playfield/edge.png');
+    _launcherImage = await game.images.load(Assets.launcher);
+    _edgeImage = await game.images.load(Assets.edge);
     if (_edgeImage != null) {
       final img = _edgeImage!;
       _edgeWidth = fieldHeight * (img.width / img.height);
     }
-    coinImage = await game.images.load('assets/playfield/coin.png');
-    dramaImage = await game.images.load('assets/playfield/Drama_Chip.png');
+    coinImage = await game.images.load(Assets.coin);
+    dramaImage = await game.images.load(Assets.dramaChip);
     for (final attr in Attribute.values) {
-      final name =
-          '${attr.name[0].toUpperCase()}${attr.name.substring(1)}_Chip.png';
-      _attributeImages[attr] = await game.images.load('assets/playfield/$name');
+      _attributeImages[attr] = await game.images.load(Assets.chipPath(attr));
     }
-    _smokeImage = await game.images.load('assets/playfield/smoke.png');
-    tvImage = await game.images.load('assets/playfield/tv_no_antenna.png');
-    final pusherImage = await game.images.load('assets/playfield/pusher.png');
+    _smokeImage = await game.images.load(Assets.smoke);
+    tvImage = await game.images.load(Assets.tvNoAntenna);
+    final pusherImage = await game.images.load(Assets.pusher);
 
     _fillQueue();
 
@@ -248,68 +246,21 @@ class CoinPusher extends PositionComponent
     }
   }
 
-  /// Returns (extra match count from doubler perks, perk to flash if any).
   (int, Perk?) _attributeDoublerBonus(Attribute tokenAttr) {
     var extra = 0;
     Perk? flash;
     final cast = game.currentCast;
-    int count(Attribute a) =>
-        cast.where((c) => c.attributes.contains(a)).length;
 
-    if (game.ownedPerks.contains(Perk.doubleThreat) &&
-        tokenAttr == Attribute.charming) {
-      final n = count(Attribute.flirty);
-      extra += n;
-      if (n > 0) flash ??= Perk.doubleThreat;
+    for (final entry in perkDoublerMappings.entries) {
+      if (!game.ownedPerks.contains(entry.key)) continue;
+      for (final mapping in entry.value) {
+        if (tokenAttr != mapping.trigger) continue;
+        final n = cast.where((c) => c.attributes.contains(mapping.bonus)).length;
+        extra += n;
+        if (n > 0) flash ??= entry.key;
+      }
     }
-    if (game.ownedPerks.contains(Perk.loveTriangle) &&
-        tokenAttr == Attribute.flirty) {
-      final n = count(Attribute.jealous);
-      extra += n;
-      if (n > 0) flash ??= Perk.loveTriangle;
-    }
-    if (game.ownedPerks.contains(Perk.theFeelingIsMutual) &&
-        tokenAttr == Attribute.paranoid) {
-      final n = count(Attribute.nosy);
-      extra += n;
-      if (n > 0) flash ??= Perk.theFeelingIsMutual;
-    }
-    if (game.ownedPerks.contains(Perk.theFeelingIsMutual) &&
-        tokenAttr == Attribute.nosy) {
-      final n = count(Attribute.paranoid);
-      extra += n;
-      if (n > 0) flash ??= Perk.theFeelingIsMutual;
-    }
-    if (game.ownedPerks.contains(Perk.tooEasy) &&
-        tokenAttr == Attribute.oblivious) {
-      final n = count(Attribute.scheming);
-      extra += n;
-      if (n > 0) flash ??= Perk.tooEasy;
-    }
-    if (game.ownedPerks.contains(Perk.didYouHearAbout) &&
-        tokenAttr == Attribute.nosy) {
-      final n = count(Attribute.chatty);
-      extra += n;
-      if (n > 0) flash ??= Perk.didYouHearAbout;
-    }
-    if (game.ownedPerks.contains(Perk.theMole) &&
-        tokenAttr == Attribute.scheming) {
-      final n = count(Attribute.loyal);
-      extra += n;
-      if (n > 0) flash ??= Perk.theMole;
-    }
-    if (game.ownedPerks.contains(Perk.theyreDefinitelyOntoMe) &&
-        tokenAttr == Attribute.oblivious) {
-      final n = count(Attribute.paranoid);
-      extra += n;
-      if (n > 0) flash ??= Perk.theyreDefinitelyOntoMe;
-    }
-    if (game.ownedPerks.contains(Perk.crickets) &&
-        tokenAttr == Attribute.stoic) {
-      final n = count(Attribute.chatty);
-      extra += n;
-      if (n > 0) flash ??= Perk.crickets;
-    }
+
     return (extra, flash);
   }
 
@@ -318,7 +269,8 @@ class CoinPusher extends PositionComponent
       token.collected = true;
       if (token.type == TokenType.coin) {
         if (game.ownedPerks.contains(Perk.marketingBudget)) {
-          health = (health + 0.5).clamp(0, 100);
+          health = (health + HealthConfig.marketingBudgetCoinBonus)
+              .clamp(0, HealthConfig.maxHealth);
         }
       } else if (token.isAttributeToken && token.attribute != null) {
         final matchCount = game.currentCast
@@ -328,24 +280,28 @@ class CoinPusher extends PositionComponent
         final (doublerCount, _) = _attributeDoublerBonus(token.attribute!);
         final effectiveMatch = matchCount + doublerCount;
         final multiplier = 1 + effectiveMatch * perChar;
-        var gain = 5.0 * multiplier;
-        if (game.ownedPerks.contains(Perk.memeLord) &&
-            _random.nextDouble() < 0.05) {
-          gain *= 10;
-          game.showPerkFlash(Perk.memeLord.label, duration: 3.0);
-        }
-        health = (health + gain).clamp(0, 100);
+        var gain = HealthConfig.baseHealthGain * multiplier;
+        gain = _applyMemeLord(gain);
+        health = (health + gain).clamp(0, HealthConfig.maxHealth);
       } else {
-        var gain = 5.0;
-        if (game.ownedPerks.contains(Perk.memeLord) &&
-            _random.nextDouble() < 0.05) {
-          gain *= 10;
-          game.showPerkFlash(Perk.memeLord.label, duration: 3.0);
-        }
-        health = (health + gain).clamp(0, 100);
+        var gain = HealthConfig.baseHealthGain;
+        gain = _applyMemeLord(gain);
+        health = (health + gain).clamp(0, HealthConfig.maxHealth);
       }
       _pendingRemoval.add(token);
     }
+  }
+
+  double _applyMemeLord(double gain) {
+    if (game.ownedPerks.contains(Perk.memeLord) &&
+        _random.nextDouble() < HealthConfig.memeLordChance) {
+      game.showPerkFlash(
+        Perk.memeLord.label,
+        duration: HealthConfig.memeLordFlashDuration,
+      );
+      return gain * HealthConfig.memeLordMultiplier;
+    }
+    return gain;
   }
 
   void _spawnSmoke(Vector2 position, double tokenSize) {
@@ -373,10 +329,11 @@ class CoinPusher extends PositionComponent
   }
 
   bool get launcherBlocked {
-    if (_pusher == null) return true;
-    if (!_pusher!.hasCompletedFirstPush) return true;
-    final pusherRightEdge = _pusher!.body.position.x / _scale + _pusherHalfW;
-    final outerLimit = _pusher!.startX + _pushDistance - _outerDisableMargin;
+    final p = _pusher;
+    if (p == null) return true;
+    if (!p.hasCompletedFirstPush) return true;
+    final pusherRightEdge = p.body.position.x / _scale + _pusherHalfW;
+    final outerLimit = p.startX + _pushDistance - _outerDisableMargin;
     return pusherRightEdge >= outerLimit;
   }
 
@@ -389,8 +346,7 @@ class CoinPusher extends PositionComponent
   }
 
   Vector2 get launcherPosition {
-    if (_pusher == null) return Vector2.zero();
-    return _pusher!.position.clone();
+    return _pusher?.position.clone() ?? Vector2.zero();
   }
 
   void rotateLauncherUp(double dt) {
@@ -467,19 +423,21 @@ class CoinPusher extends PositionComponent
   void update(double dt) {
     super.update(dt);
     final s = game.currentSeason;
-    final multiplier = s <= 4
-        ? pow(1.2, s - 1)
-        : pow(1.2, 3) * pow(1.18, s - 4);
-    final drainRate = 3.0 * multiplier;
-    health = (health - dt * drainRate).clamp(0, 100);
+    final multiplier = s <= HealthConfig.drainEarlySeasons
+        ? pow(HealthConfig.drainEarlyBase, s - 1)
+        : pow(HealthConfig.drainEarlyBase, HealthConfig.drainEarlySeasons - 1) *
+            pow(HealthConfig.drainLateBase, s - HealthConfig.drainEarlySeasons);
+    final drainRate = HealthConfig.baseDrainRate * multiplier;
+    health = (health - dt * drainRate).clamp(0, HealthConfig.maxHealth);
     if (health <= 0) game.triggerGameOver();
     if (_launcherCooldown > 0) _launcherCooldown -= dt;
     _world.stepDt(dt);
 
     for (final token in _pendingRemoval) {
       if (token.type == TokenType.coin) coinsCollected++;
-      if (token.type == TokenType.drama)
+      if (token.type == TokenType.drama) {
         _spawnSmoke(token.position, token.size.x);
+      }
       _world.destroyBody(token.body);
       _tokens.remove(token);
       token.removeFromParent();

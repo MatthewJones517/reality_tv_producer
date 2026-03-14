@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'game.dart';
+import 'game_config.dart';
 
 class GameOverScreen extends StatefulWidget {
   final RealityTvGame game;
@@ -15,10 +16,9 @@ class GameOverScreen extends StatefulWidget {
 }
 
 class _GameOverScreenState extends State<GameOverScreen> {
-  static const _pink = Color(0xFFFF1493);
-  static const _fontFamily = 'VT323';
   static const _spaceDelaySeconds = 5;
 
+  final _focusNode = FocusNode();
   bool _spaceEnabled = false;
   int _remainingSeconds = _spaceDelaySeconds;
   Timer? _countdownTimer;
@@ -41,6 +41,7 @@ class _GameOverScreenState extends State<GameOverScreen> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -60,7 +61,7 @@ class _GameOverScreenState extends State<GameOverScreen> {
     return Material(
       color: const Color(0xCC000000),
       child: KeyboardListener(
-        focusNode: FocusNode()..requestFocus(),
+        focusNode: _focusNode,
         autofocus: true,
         onKeyEvent: (event) {
           if (!_spaceEnabled) return;
@@ -77,7 +78,7 @@ class _GameOverScreenState extends State<GameOverScreen> {
             decoration: BoxDecoration(
               color: const Color(0xEE111111),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: _pink, width: 3),
+              border: Border.all(color: AppTheme.pink, width: 3),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -87,10 +88,10 @@ class _GameOverScreenState extends State<GameOverScreen> {
                   "You've Been Cancelled!",
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: 'CinzelDecorative',
+                    fontFamily: AppTheme.headingFontFamily,
                     fontSize: 56,
                     fontWeight: FontWeight.bold,
-                    color: _pink,
+                    color: AppTheme.pink,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -99,7 +100,7 @@ class _GameOverScreenState extends State<GameOverScreen> {
                   '${_ordinalWord(widget.game.currentSeason)} season.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: _fontFamily,
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 32,
                     color: Colors.white.withValues(alpha: 0.9),
                   ),
@@ -110,7 +111,7 @@ class _GameOverScreenState extends State<GameOverScreen> {
                       ? 'Press Space to Continue'
                       : 'Continue in $_remainingSeconds seconds',
                   style: TextStyle(
-                    fontFamily: _fontFamily,
+                    fontFamily: AppTheme.fontFamily,
                     fontSize: 36,
                     color: Colors.white.withValues(alpha: 0.6),
                   ),
