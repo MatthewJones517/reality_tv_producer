@@ -35,7 +35,7 @@ class CoinPusher extends PositionComponent
 
   late final f2d.World _world;
   final _random = Random();
-  final List<TokenBody> _tokens = [];
+  final Set<TokenBody> _tokens = {};
   PusherBody? _pusher;
   ui.Image? _launcherImage;
   ui.Image? _edgeImage;
@@ -483,7 +483,7 @@ class CoinPusher extends PositionComponent
 
     for (final token in _pendingRemoval) {
       if (token.type == TokenType.coin) coinsCollected++;
-      _spawnSmoke(token.position, token.size.x);
+      if (token.type == TokenType.drama) _spawnSmoke(token.position, token.size.x);
       _world.destroyBody(token.body);
       _tokens.remove(token);
       token.removeFromParent();
