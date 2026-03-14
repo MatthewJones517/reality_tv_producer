@@ -59,14 +59,28 @@ class CoinPusher extends PositionComponent
   double skillStopCharge = 1.0;
   bool skillStopPressed = false;
 
-  /// Rapid auto fire: shots remaining in current burst. Resets to 10 on space release.
+  /// Rapid auto fire: shots remaining in current burst.
   int _rapidFireBurstRemaining = 10;
 
-  /// 0..1; full when burst is ready, depletes as shots are fired.
-  double get rapidFireBurstFraction => _rapidFireBurstRemaining / 10.0;
+  /// Cooldown after burst exhausted. 1.0 at start, counts down to 0. When 0, burst resets to 10.
+  double _rapidFireCooldownTimer = 0;
+
+  static const _rapidFireCooldownDuration = 0.5;
+
+  /// 0..1; full when ready, depletes while firing, recharges during cooldown.
+  double get rapidFireBurstFraction {
+    if (_rapidFireCooldownTimer > 0) {
+      return 1.0 - (_rapidFireCooldownTimer / _rapidFireCooldownDuration);
+    }
+    return _rapidFireBurstRemaining / 10.0;
+  }
 
   void resetRapidFireBurst() {
-    _rapidFireBurstRemaining = 10;
+    if (_rapidFireBurstRemaining <= 0) {
+      _rapidFireCooldownTimer = _rapidFireCooldownDuration;
+    } else {
+      _rapidFireBurstRemaining = 10;
+    }
   }
 
   CoinPusher({int initialCoins = 0}) {
@@ -499,6 +513,10 @@ class CoinPusher extends PositionComponent
     health = (health - dt * 3).clamp(0, 100);
     if (health <= 0) game.triggerGameOver();
     if (_launcherCooldown > 0) _launcherCooldown -= dt;
+    if (_rapidFireCooldownTimer > 0) {
+      _rapidFireCooldownTimer -= dt;
+      if (_rapidFireCooldownTimer <= 0) _rapidFireBurstRemaining = 10;
+    }
     _world.stepDt(dt);
 
     for (final token in _pendingRemoval) {

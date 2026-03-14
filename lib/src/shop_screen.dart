@@ -33,7 +33,6 @@ class _ShopScreenState extends State<ShopScreen> {
   final _random = Random();
   final Set<Attribute> _purchasedThisSession = {};
   static const _perkCost = 200;
-  final _unlockedScrollController = ScrollController();
   final _scrollController = ScrollController();
 
   @override
@@ -45,7 +44,6 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _unlockedScrollController.dispose();
     super.dispose();
   }
 
@@ -130,17 +128,18 @@ class _ShopScreenState extends State<ShopScreen> {
                     thumbVisibility: true,
                     child: SingleChildScrollView(
                       controller: _scrollController,
-                      child: SizedBox(
-                        width: 1200,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1200),
+                        child: IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
                                   _ShopHeader(
                                     coins: widget.game.coins,
                                     rerollCost: widget.game.rerollCost,
@@ -182,16 +181,24 @@ class _ShopScreenState extends State<ShopScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 24),
-                                  _UnlockedChipsList(
-                                    unlockedTokens: widget.game.unlockedTokens,
-                                    scrollController: _unlockedScrollController,
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: _UnlockedChipsList(
+                                      unlockedTokens: widget.game.unlockedTokens,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: _UnlockedPerksList(
+                                      ownedPerks: widget.game.ownedPerks,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             Container(
                               width: 2,
-                              height: 400,
                               color: _pink.withValues(alpha: 0.5),
                             ),
                             _PerksPanel(
@@ -207,6 +214,7 @@ class _ShopScreenState extends State<ShopScreen> {
                   ),
                 ),
               ),
+            ),
               const SizedBox(height: 4),
               ElevatedButton(
                 onPressed: () => widget.game.finishShop(),
@@ -337,12 +345,8 @@ class _ShopHeader extends StatelessWidget {
 
 class _UnlockedChipsList extends StatelessWidget {
   final Map<Attribute, int> unlockedTokens;
-  final ScrollController scrollController;
 
-  const _UnlockedChipsList({
-    required this.unlockedTokens,
-    required this.scrollController,
-  });
+  const _UnlockedChipsList({required this.unlockedTokens});
 
   static String _chipAssetPath(Attribute attr) {
     final name = attr.name;
@@ -353,6 +357,7 @@ class _UnlockedChipsList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Unlocked Chips',
@@ -364,64 +369,103 @@ class _UnlockedChipsList extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 200,
-          child: ScrollbarTheme(
-            data: ScrollbarThemeData(
-              thumbColor: WidgetStateProperty.all(_pink),
+        if (unlockedTokens.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 24, right: 24),
+            child: Text(
+              'Attribute chips give you an additional '
+              'ratings boost for each character with the '
+              'matching attribute',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: _fontFamily,
+                fontSize: 22,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
             ),
-            child: Scrollbar(
-              controller: scrollController,
-              thumbVisibility: true,
-              child: ListView(
-                controller: scrollController,
-                padding: const EdgeInsets.only(left: 24, right: 16),
+          )
+        else
+          Wrap(
+            spacing: 24,
+            runSpacing: 12,
+            children: unlockedTokens.entries.map(
+              (e) => Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  if (unlockedTokens.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Text(
-                        'Attribute chips give you an additional '
-                        'ratings boost for each character with the '
-                        'matching attribute',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: _fontFamily,
-                          fontSize: 22,
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    )
-                  else
-                    ...unlockedTokens.entries.map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              _chipAssetPath(e.key),
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, _, _) =>
-                                  const SizedBox(width: 48, height: 48),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              '${e.key.label} Lv.${e.value}',
-                              style: const TextStyle(
-                                fontFamily: _fontFamily,
-                                fontSize: 28,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                  Image.asset(
+                    _chipAssetPath(e.key),
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) =>
+                        const SizedBox(width: 48, height: 48),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '${e.key.label} Lv.${e.value}',
+                    style: const TextStyle(
+                      fontFamily: _fontFamily,
+                      fontSize: 28,
+                      color: Colors.white,
                     ),
+                  ),
                 ],
               ),
+            ).toList(),
+          ),
+      ],
+    );
+  }
+}
+
+class _UnlockedPerksList extends StatelessWidget {
+  final Set<Perk> ownedPerks;
+
+  const _UnlockedPerksList({required this.ownedPerks});
+
+  @override
+  Widget build(BuildContext context) {
+    if (ownedPerks.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Unlocked Perks',
+          style: TextStyle(
+            fontFamily: 'CinzelDecorative',
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: _pink,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ...ownedPerks.map(
+          (perk) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  perk.label,
+                  style: const TextStyle(
+                    fontFamily: _fontFamily,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF87CEEB),
+                  ),
+                ),
+                Text(
+                  perk.description,
+                  style: const TextStyle(
+                    fontFamily: _fontFamily,
+                    fontSize: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
