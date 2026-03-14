@@ -55,10 +55,6 @@ class CoinPusher extends PositionComponent
   double launcherAngle = 0;
   double _launcherCooldown = 0;
 
-  /// 0..1; drains while skill stop held (5s max), recharges in 10s from empty
-  double skillStopCharge = 1.0;
-  bool skillStopPressed = false;
-
   CoinPusher({int initialCoins = 0}) {
     size = Vector2(fieldWidth, fieldHeight);
     coinsCollected = initialCoins;
@@ -470,20 +466,6 @@ class CoinPusher extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    final shouldFreeze =
-        skillStopPressed &&
-        skillStopCharge > 0 &&
-        (_pusher?.hasCompletedFirstPush ?? false);
-    if (shouldFreeze) {
-      skillStopCharge = (skillStopCharge - dt / 5).clamp(0.0, 1.0);
-      _pusher?.setFrozen(true);
-    } else {
-      final rechargeRate = game.ownedPerks.contains(Perk.skillStopRecharge)
-          ? 4 / 10
-          : 1 / 10;
-      skillStopCharge = (skillStopCharge + dt * rechargeRate).clamp(0.0, 1.0);
-      _pusher?.setFrozen(false);
-    }
     health = (health - dt * 3).clamp(0, 100);
     if (health <= 0) game.triggerGameOver();
     if (_launcherCooldown > 0) _launcherCooldown -= dt;

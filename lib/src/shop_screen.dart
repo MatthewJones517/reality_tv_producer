@@ -59,7 +59,26 @@ class _ShopScreenState extends State<ShopScreen> {
       if (level >= 3) continue;
       eligible.add(attr);
     }
-    eligible.shuffle(_random);
+
+    final isFirstShop = widget.game.currentEpisode == 3;
+    final castAttributes = widget.game.currentCast
+        .expand((c) => c.attributes)
+        .toSet();
+    final eligibleMatchingCast =
+        eligible.where((a) => castAttributes.contains(a)).toList();
+
+    List<Attribute> options;
+    if (isFirstShop &&
+        eligibleMatchingCast.isNotEmpty &&
+        eligible.length >= 3) {
+      final match = eligibleMatchingCast[_random.nextInt(eligibleMatchingCast.length)];
+      final rest = eligible.where((a) => a != match).toList()..shuffle(_random);
+      options = [match, ...rest.take(2)];
+    } else {
+      eligible.shuffle(_random);
+      options = eligible.take(3).toList();
+    }
+
     final unlocked = widget.game.unlockedTokens;
     final eligiblePerks =
         Perk.values
@@ -71,7 +90,7 @@ class _ShopScreenState extends State<ShopScreen> {
             .toList()
           ..shuffle(_random);
     setState(() {
-      _options = eligible.take(3).toList();
+      _options = options;
       _perkOptions = eligiblePerks.take(3).toList();
     });
   }

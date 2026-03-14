@@ -1,7 +1,6 @@
 import 'character.dart';
 
 enum Perk {
-  skillStopRecharge,
   doubleThreat,
   loveTriangle,
   tooEasy,
@@ -14,7 +13,6 @@ enum Perk {
   memeLord;
 
   static const labels = {
-    Perk.skillStopRecharge: 'Skill Stop Recharge',
     Perk.doubleThreat: 'Double Threat',
     Perk.loveTriangle: 'Love Triangle',
     Perk.tooEasy: 'Too Easy',
@@ -30,7 +28,6 @@ enum Perk {
   String get label => labels[this]!;
 
   static const descriptions = {
-    Perk.skillStopRecharge: 'Skill stop meter recharges four times faster.',
     Perk.doubleThreat:
         'Two people work the room at the same time. Flirty characters double the ratings from Charming tokens.',
     Perk.loveTriangle:
