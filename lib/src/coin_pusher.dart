@@ -127,6 +127,7 @@ class CoinPusher extends PositionComponent
 
     _fillQueue();
 
+    f2d.velocityIterations = 4;
     _world = f2d.World(f2d.Vector2.zero());
     _world.setContactListener(_ContactListener(this));
 

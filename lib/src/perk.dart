@@ -62,7 +62,7 @@ enum Perk {
     Perk.loveTriangle: [Attribute.flirty],
     Perk.tooEasy: [Attribute.oblivious],
     Perk.didYouHearAbout: [Attribute.nosy],
-    Perk.theMole: [Attribute.scheming],
+    Perk.theMole: [Attribute.loyal],
     Perk.theyreDefinitelyOntoMe: [Attribute.oblivious],
     Perk.theFeelingIsMutual: [Attribute.nosy, Attribute.paranoid],
     Perk.crickets: [Attribute.stoic],
