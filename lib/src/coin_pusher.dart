@@ -59,29 +59,6 @@ class CoinPusher extends PositionComponent
   double skillStopCharge = 1.0;
   bool skillStopPressed = false;
 
-  /// Rapid auto fire: shots remaining in current burst. 0 when recharging.
-  int _rapidFireBurstRemaining = 10;
-
-  /// 0..1; recharges from current level when space released. When 1.0, burst resets to 10.
-  double _rapidFireRechargeLevel = 1.0;
-
-  static const _rapidFireRechargeRate = 2.0; // full in 0.5s
-
-  /// 0..1; full when ready, depletes while firing, recharges at fixed rate when space released.
-  double get rapidFireBurstFraction {
-    if (_rapidFireBurstRemaining > 0) {
-      return _rapidFireBurstRemaining / 10.0;
-    }
-    return _rapidFireRechargeLevel;
-  }
-
-  void resetRapidFireBurst() {
-    if (_rapidFireBurstRemaining > 0) {
-      _rapidFireRechargeLevel = _rapidFireBurstRemaining / 10.0;
-      _rapidFireBurstRemaining = 0;
-    }
-  }
-
   CoinPusher({int initialCoins = 0}) {
     size = Vector2(fieldWidth, fieldHeight);
     coinsCollected = initialCoins;
@@ -433,16 +410,6 @@ class CoinPusher extends PositionComponent
     }
   }
 
-  /// Rapid auto fire: shoots only if burst has shots remaining. Decrements on fire.
-  void shootRapidFire() {
-    if (_rapidFireBurstRemaining <= 0) return;
-    if (!launcherBlocked && _launcherCooldown <= 0) {
-      _rapidFireBurstRemaining--;
-      _launcherCooldown = _fireCooldown;
-      _shootAt(launcherPosition.x, launcherPosition.y, launcherAngle);
-    }
-  }
-
   Future<void> _shootAt(double originX, double originY, double angle) async {
     if (tokenQueue.isEmpty) return;
     final queueToken = tokenQueue.removeLast();
@@ -512,11 +479,6 @@ class CoinPusher extends PositionComponent
     health = (health - dt * 3).clamp(0, 100);
     if (health <= 0) game.triggerGameOver();
     if (_launcherCooldown > 0) _launcherCooldown -= dt;
-    if (_rapidFireBurstRemaining <= 0 && _rapidFireRechargeLevel < 1.0) {
-      _rapidFireRechargeLevel =
-          (_rapidFireRechargeLevel + dt * _rapidFireRechargeRate).clamp(0.0, 1.0);
-      if (_rapidFireRechargeLevel >= 1.0) _rapidFireBurstRemaining = 10;
-    }
     _world.stepDt(dt);
 
     for (final token in _pendingRemoval) {

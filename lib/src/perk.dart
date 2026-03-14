@@ -2,7 +2,6 @@ import 'character.dart';
 
 enum Perk {
   skillStopRecharge,
-  rapidAutoFire,
   doubleThreat,
   loveTriangle,
   tooEasy,
@@ -16,7 +15,6 @@ enum Perk {
 
   static const labels = {
     Perk.skillStopRecharge: 'Skill Stop Recharge',
-    Perk.rapidAutoFire: 'Rapid Auto Fire',
     Perk.doubleThreat: 'Double Threat',
     Perk.loveTriangle: 'Love Triangle',
     Perk.tooEasy: 'Too Easy',
@@ -33,8 +31,6 @@ enum Perk {
 
   static const descriptions = {
     Perk.skillStopRecharge: 'Skill stop meter recharges four times faster.',
-    Perk.rapidAutoFire:
-        'Holding down space enables rapid fire for a short period.',
     Perk.doubleThreat:
         'Two people work the room at the same time. Flirty characters double the ratings from Charming tokens.',
     Perk.loveTriangle:

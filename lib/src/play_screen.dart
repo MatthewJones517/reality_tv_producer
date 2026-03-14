@@ -8,7 +8,6 @@ import 'package:flutter/painting.dart';
 import 'character.dart';
 import 'coin_pusher.dart';
 import 'game.dart';
-import 'perk.dart';
 
 class PlayScreen extends PositionComponent
     with HasGameReference<RealityTvGame> {
@@ -174,17 +173,6 @@ class PlayScreen extends PositionComponent
     add(_SkillStopMeterDisplay(
       coinPusher: coinPusher,
       position: Vector2(skillStopX, 1080 - _bottomBarHeight / 2),
-    ));
-
-    const rapidFireGap = 24.0;
-    const skillStopBarWidth = 160.0;
-    add(_RapidFireMeterDisplay(
-      game: game,
-      coinPusher: coinPusher,
-      position: Vector2(
-        skillStopX + skillStopBarWidth + rapidFireGap,
-        1080 - _bottomBarHeight / 2,
-      ),
     ));
 
     add(_PerkFlashDisplay(game: game)
@@ -486,46 +474,6 @@ class _SkillStopMeterDisplay extends PositionComponent {
       canvas.drawRRect(
         ui.RRect.fromRectAndRadius(fillRect, radius),
         ui.Paint()..color = const ui.Color(0xFF87CEEB),
-      );
-    }
-  }
-}
-
-class _RapidFireMeterDisplay extends PositionComponent {
-  static const _barWidth = 160.0;
-  static const _barHeight = 40.0;
-  static const _fillColor = ui.Color(0xFFFFFF00);
-
-  final RealityTvGame game;
-  final CoinPusher coinPusher;
-
-  _RapidFireMeterDisplay({
-    required this.game,
-    required this.coinPusher,
-    required super.position,
-  }) {
-    anchor = Anchor.centerLeft;
-  }
-
-  @override
-  void render(ui.Canvas canvas) {
-    if (!game.ownedPerks.contains(Perk.rapidAutoFire)) return;
-
-    final charge = coinPusher.rapidFireBurstFraction.clamp(0.0, 1.0);
-    final barRect = ui.Rect.fromLTWH(0, -_barHeight / 2, _barWidth, _barHeight);
-    final radius = ui.Radius.circular(_barHeight / 2);
-
-    canvas.drawRRect(
-      ui.RRect.fromRectAndRadius(barRect, radius),
-      ui.Paint()..color = const ui.Color(0xFF333333),
-    );
-
-    if (charge > 0) {
-      final fillWidth = _barWidth * charge;
-      final fillRect = ui.Rect.fromLTWH(0, -_barHeight / 2, fillWidth, _barHeight);
-      canvas.drawRRect(
-        ui.RRect.fromRectAndRadius(fillRect, radius),
-        ui.Paint()..color = _fillColor,
       );
     }
   }
