@@ -20,9 +20,9 @@ class AudioService {
     Sfx.shoot: 0.4,
   };
 
-  static const _sfxMaxInstances = <Sfx, int>{Sfx.coin: 3};
+  static const _pooledSfx = <Sfx, int>{Sfx.coin: 3, Sfx.shoot: 6};
 
-  final Map<Sfx, int> _activeSfxCount = {};
+  final Map<Sfx, AudioPool> _pools = {};
 
   static const _musicPaths = <MusicTrack, String>{
     MusicTrack.intro: 'music/intro.mp3',
@@ -43,6 +43,16 @@ class AudioService {
     try {
       FlameAudio.audioCache.prefix = 'assets/';
       await FlameAudio.audioCache.loadAll([..._sfxPaths.values]);
+
+      for (final entry in _pooledSfx.entries) {
+        final path = _sfxPaths[entry.key];
+        if (path == null) continue;
+        _pools[entry.key] = await FlameAudio.createPool(
+          path,
+          maxPlayers: entry.value,
+        );
+      }
+
       _initialized = true;
     } catch (e, st) {
       developer.log('AudioService init failed', error: e, stackTrace: st);
@@ -68,31 +78,27 @@ class AudioService {
 
   void playSfx(Sfx sfx) {
     if (!_initialized) return;
-    final path = _sfxPaths[sfx];
-    if (path == null) return;
+    final volume = _sfxVolume[sfx] ?? 1.0;
 
-    final maxInstances = _sfxMaxInstances[sfx];
-    if (maxInstances != null) {
-      final active = _activeSfxCount[sfx] ?? 0;
-      if (active >= maxInstances) return;
-      _activeSfxCount[sfx] = active + 1;
+    final pool = _pools[sfx];
+    if (pool != null) {
+      try {
+        pool.start(volume: volume);
+      } catch (e, st) {
+        developer.log(
+          'AudioService playSfx pool failed',
+          error: e,
+          stackTrace: st,
+        );
+      }
+      return;
     }
 
-    final volume = _sfxVolume[sfx] ?? 1.0;
+    final path = _sfxPaths[sfx];
+    if (path == null) return;
     try {
-      FlameAudio.play(path, volume: volume).then((player) {
-        if (maxInstances != null) {
-          player.onPlayerComplete.first.then((_) {
-            final count = _activeSfxCount[sfx] ?? 1;
-            _activeSfxCount[sfx] = count > 0 ? count - 1 : 0;
-          });
-        }
-      });
+      FlameAudio.play(path, volume: volume);
     } catch (e, st) {
-      if (maxInstances != null) {
-        final count = _activeSfxCount[sfx] ?? 1;
-        _activeSfxCount[sfx] = count > 0 ? count - 1 : 0;
-      }
       developer.log('AudioService playSfx failed', error: e, stackTrace: st);
     }
   }
