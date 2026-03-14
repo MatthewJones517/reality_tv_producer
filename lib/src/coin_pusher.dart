@@ -29,7 +29,7 @@ class CoinPusher extends PositionComponent
   static const _launcherAngleSpeed = 3.0;
   static const _launcherAngleMin = -pi / 2 + 0.1;
   static const _launcherAngleMax = pi / 2 - 0.1;
-  static const _outerDisableMargin = 40.0;
+  static const _outerDisableMargin = 100.0;
 
   static const queueSize = 6;
 
@@ -484,7 +484,8 @@ class CoinPusher extends PositionComponent
 
     for (final token in _pendingRemoval) {
       if (token.type == TokenType.coin) coinsCollected++;
-      if (token.type == TokenType.drama) _spawnSmoke(token.position, token.size.x);
+      if (token.type == TokenType.drama)
+        _spawnSmoke(token.position, token.size.x);
       _world.destroyBody(token.body);
       _tokens.remove(token);
       token.removeFromParent();
