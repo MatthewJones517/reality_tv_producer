@@ -14,4 +14,4 @@ jobs:
       - uses: bluefireteam/flutter-gh-pages@v8
         with:
           baseHref: reality_tv_producer
-          webRenderer: wasm
+          webRenderer: canvaskit
