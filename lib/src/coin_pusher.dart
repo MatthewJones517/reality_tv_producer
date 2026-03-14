@@ -200,7 +200,8 @@ class CoinPusher extends PositionComponent
 
     _tokenQueue = TokenQueue(unlockedTokens: () => game.unlockedTokens);
 
-    f2d.velocityIterations = 4;
+    f2d.velocityIterations = 2;
+    f2d.positionIterations = 2;
     _world = f2d.World(f2d.Vector2.zero());
     _world.setContactListener(_ContactListener(this));
 
