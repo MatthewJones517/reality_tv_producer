@@ -59,27 +59,26 @@ class CoinPusher extends PositionComponent
   double skillStopCharge = 1.0;
   bool skillStopPressed = false;
 
-  /// Rapid auto fire: shots remaining in current burst.
+  /// Rapid auto fire: shots remaining in current burst. 0 when recharging.
   int _rapidFireBurstRemaining = 10;
 
-  /// Cooldown after burst exhausted. 1.0 at start, counts down to 0. When 0, burst resets to 10.
-  double _rapidFireCooldownTimer = 0;
+  /// 0..1; recharges from current level when space released. When 1.0, burst resets to 10.
+  double _rapidFireRechargeLevel = 1.0;
 
-  static const _rapidFireCooldownDuration = 0.5;
+  static const _rapidFireRechargeRate = 2.0; // full in 0.5s
 
-  /// 0..1; full when ready, depletes while firing, recharges during cooldown.
+  /// 0..1; full when ready, depletes while firing, recharges at fixed rate when space released.
   double get rapidFireBurstFraction {
-    if (_rapidFireCooldownTimer > 0) {
-      return 1.0 - (_rapidFireCooldownTimer / _rapidFireCooldownDuration);
+    if (_rapidFireBurstRemaining > 0) {
+      return _rapidFireBurstRemaining / 10.0;
     }
-    return _rapidFireBurstRemaining / 10.0;
+    return _rapidFireRechargeLevel;
   }
 
   void resetRapidFireBurst() {
-    if (_rapidFireBurstRemaining <= 0) {
-      _rapidFireCooldownTimer = _rapidFireCooldownDuration;
-    } else {
-      _rapidFireBurstRemaining = 10;
+    if (_rapidFireBurstRemaining > 0) {
+      _rapidFireRechargeLevel = _rapidFireBurstRemaining / 10.0;
+      _rapidFireBurstRemaining = 0;
     }
   }
 
@@ -513,9 +512,10 @@ class CoinPusher extends PositionComponent
     health = (health - dt * 3).clamp(0, 100);
     if (health <= 0) game.triggerGameOver();
     if (_launcherCooldown > 0) _launcherCooldown -= dt;
-    if (_rapidFireCooldownTimer > 0) {
-      _rapidFireCooldownTimer -= dt;
-      if (_rapidFireCooldownTimer <= 0) _rapidFireBurstRemaining = 10;
+    if (_rapidFireBurstRemaining <= 0 && _rapidFireRechargeLevel < 1.0) {
+      _rapidFireRechargeLevel =
+          (_rapidFireRechargeLevel + dt * _rapidFireRechargeRate).clamp(0.0, 1.0);
+      if (_rapidFireRechargeLevel >= 1.0) _rapidFireBurstRemaining = 10;
     }
     _world.stepDt(dt);
 
