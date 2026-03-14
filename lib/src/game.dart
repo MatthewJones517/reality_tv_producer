@@ -60,12 +60,14 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   Future<void> onLoad() async {
     images.prefix = '';
     camera.moveTo(Vector2(_width / 2, _height / 2));
-    await AudioService.instance.init();
-    await AudioService.instance.playMusic(MusicTrack.intro);
     world.add(TitleScreen());
+    AudioService.instance.init().then((_) {
+      AudioService.instance.playMusic(MusicTrack.intro);
+    });
   }
 
   void submitShowName(String name) {
+    AudioService.instance.playSfx(Sfx.continuePress);
     showName = name;
     overlays.remove(Overlays.showName);
     _scene = GameScene.howToPlay;
@@ -73,6 +75,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   }
 
   void finishHowToPlay() {
+    AudioService.instance.playSfx(Sfx.continuePress);
     overlays.remove(Overlays.howToPlay);
     _scene = GameScene.cast;
     world.children.whereType<TitleScreen>().forEach(
@@ -291,6 +294,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
       switch (_scene) {
         case GameScene.title:
+          AudioService.instance.playSfx(Sfx.continuePress);
           _scene = GameScene.showName;
           overlays.add(Overlays.showName);
           return KeyEventResult.handled;

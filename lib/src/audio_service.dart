@@ -19,6 +19,14 @@ class AudioService {
 
   final Map<Sfx, AudioSource> _sfxSources = {};
 
+  static const _sfxVolume = <Sfx, double>{
+    Sfx.coin: 0.25,
+  };
+
+  static const _sfxMaxInstances = <Sfx, int>{
+    Sfx.coin: 3,
+  };
+
   SoundHandle? _currentMusicHandle;
   MusicTrack? _currentTrack;
 
@@ -83,8 +91,13 @@ class AudioService {
     if (!_initialized) return;
     final source = _sfxSources[sfx];
     if (source == null) return;
+
+    final maxInstances = _sfxMaxInstances[sfx];
+    if (maxInstances != null && source.handles.length >= maxInstances) return;
+
+    final volume = _sfxVolume[sfx] ?? 1.0;
     try {
-      SoLoud.instance.play(source);
+      SoLoud.instance.play(source, volume: volume);
     } catch (e, st) {
       developer.log('AudioService playSfx failed', error: e, stackTrace: st);
     }

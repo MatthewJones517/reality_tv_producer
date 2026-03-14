@@ -101,7 +101,7 @@ class CoinPusher extends PositionComponent
       cast: game.currentCast,
     );
 
-    if (result.isCoin) {
+    if (result.isCoin && (_pusher?.hasCompletedFirstPush ?? false)) {
       AudioService.instance.playSfx(Sfx.coin);
     }
     if (result.healthDelta > 0) {

@@ -11,6 +11,7 @@ import 'src/shop_screen.dart';
 import 'src/win_screen.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   final gameFocusNode = FocusNode();
   final game = RealityTvGame(gameFocusNode: gameFocusNode);
   runApp(MaterialApp(
