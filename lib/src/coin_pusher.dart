@@ -18,7 +18,7 @@ class CoinPusher extends PositionComponent
   static const fieldWidth = 1920.0;
   static const fieldHeight = 854.0;
 
-  static const _tokenCount = 550;
+  static const _tokenCount = 450;
   static const _pushDistance = 350.0;
   static const _pushSpeedPx = 120.0;
   static const _pusherStartX = 0.0;
@@ -158,11 +158,18 @@ class CoinPusher extends PositionComponent
     final dropX = _edgeWidth > 0
         ? (fieldWidth - _edgeWidth / 2) * _scale
         : fieldWidth * _scale;
+    final zoneWidth = 3 * (_edgeWidth > 0 ? _edgeWidth : 50) * _scale;
+    final halfW = zoneWidth / 2;
+    final halfH = h / 2;
+    final centerX = dropX - halfW;
+    final centerY = halfH;
 
-    final bodyDef = f2d.BodyDef(type: f2d.BodyType.static);
+    final bodyDef = f2d.BodyDef(
+      type: f2d.BodyType.static,
+      position: f2d.Vector2(centerX, centerY),
+    );
     final body = _world.createBody(bodyDef);
-    final shape = f2d.EdgeShape()
-      ..set(f2d.Vector2(dropX, 0), f2d.Vector2(dropX, h));
+    final shape = f2d.PolygonShape()..setAsBoxXY(halfW, halfH);
     final fixtureDef = f2d.FixtureDef(shape)..isSensor = true;
     body.createFixture(fixtureDef);
     body.userData = 'dropZone';
@@ -507,23 +514,46 @@ class CoinPusher extends PositionComponent
   }
 
   void _renderEdge(ui.Canvas canvas) {
-    final img = _edgeImage;
-    if (img == null || _edgeWidth <= 0) return;
+    final zoneWidth = 3.0 * (_edgeWidth > 0 ? _edgeWidth : 50.0);
+    const extraBlackWidth = 80.0;
 
-    final x = fieldWidth - _edgeWidth;
-    final srcRect = ui.Rect.fromLTWH(
-      0,
-      0,
-      img.width.toDouble(),
-      img.height.toDouble(),
-    );
-    final dstRect = ui.Rect.fromLTWH(x, 0, _edgeWidth, fieldHeight);
-    canvas.drawImageRect(
-      img,
-      srcRect,
-      dstRect,
-      ui.Paint()..filterQuality = ui.FilterQuality.low,
-    );
+    final img = _edgeImage;
+    if (img != null && _edgeWidth > 0) {
+      final graphicX = fieldWidth - zoneWidth - extraBlackWidth;
+      final srcRect = ui.Rect.fromLTWH(
+        0,
+        0,
+        img.width.toDouble(),
+        img.height.toDouble(),
+      );
+      final dstRect = ui.Rect.fromLTWH(graphicX, 0, zoneWidth, fieldHeight);
+      canvas.drawImageRect(
+        img,
+        srcRect,
+        dstRect,
+        ui.Paint()..filterQuality = ui.FilterQuality.low,
+      );
+      // Overlap by 2px to avoid gray seam from sub-pixel gap or edge image
+      canvas.drawRect(
+        ui.Rect.fromLTWH(
+          fieldWidth - extraBlackWidth - 2,
+          0,
+          extraBlackWidth + 2,
+          fieldHeight,
+        ),
+        ui.Paint()..color = const ui.Color(0xFF000000),
+      );
+    } else {
+      canvas.drawRect(
+        ui.Rect.fromLTWH(
+          fieldWidth - zoneWidth - extraBlackWidth,
+          0,
+          zoneWidth + extraBlackWidth,
+          fieldHeight,
+        ),
+        ui.Paint()..color = const ui.Color(0xFF000000),
+      );
+    }
   }
 }
 

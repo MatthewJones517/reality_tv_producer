@@ -21,9 +21,9 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> {
   static int _costForLevel(int currentLevel) {
     return switch (currentLevel) {
-      0 => 100,
-      1 => 150,
-      2 => 200,
+      0 => 50,
+      1 => 100,
+      2 => 150,
       _ => 200,
     };
   }
@@ -32,7 +32,7 @@ class _ShopScreenState extends State<ShopScreen> {
   late List<Perk> _perkOptions;
   final _random = Random();
   final Set<Attribute> _purchasedThisSession = {};
-  static const _perkCost = 200;
+  static const _perkCost = 175;
   final _scrollController = ScrollController();
 
   @override
@@ -61,11 +61,15 @@ class _ShopScreenState extends State<ShopScreen> {
     }
     eligible.shuffle(_random);
     final unlocked = widget.game.unlockedTokens;
-    final eligiblePerks = Perk.values
-        .where((p) =>
-            !widget.game.ownedPerks.contains(p) && Perk.isEligible(p, unlocked))
-        .toList()
-      ..shuffle(_random);
+    final eligiblePerks =
+        Perk.values
+            .where(
+              (p) =>
+                  !widget.game.ownedPerks.contains(p) &&
+                  Perk.isEligible(p, unlocked),
+            )
+            .toList()
+          ..shuffle(_random);
     setState(() {
       _options = eligible.take(3).toList();
       _perkOptions = eligiblePerks.take(3).toList();
@@ -140,81 +144,84 @@ class _ShopScreenState extends State<ShopScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
-                                  _ShopHeader(
-                                    coins: widget.game.coins,
-                                    rerollCost: widget.game.rerollCost,
-                                    canReroll:
-                                        widget.game.coins >=
-                                        widget.game.rerollCost,
-                                    onReroll: _rerollShop,
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Transform.translate(
-                                    offset: const Offset(-24, 0),
-                                    child: Wrap(
-                                      spacing: 24,
-                                      runSpacing: 24,
-                                      alignment: WrapAlignment.center,
-                                      children: _options.map((attr) {
-                                        final level =
-                                            widget.game.unlockedTokens[attr] ??
-                                            0;
-                                        final cost = _costForLevel(level);
-                                        final alreadyPurchased =
-                                            _purchasedThisSession.contains(
-                                              attr,
-                                            );
-                                        final canBuy =
-                                            !alreadyPurchased &&
-                                            level < 3 &&
-                                            widget.game.coins >= cost;
-                                        return _ShopOption(
-                                          attribute: attr,
-                                          level: level,
-                                          cost: cost,
-                                          canBuy: canBuy,
-                                          isLevelUp: level > 0,
-                                          grayedOut: alreadyPurchased,
-                                          onPurchase: () => _purchase(attr),
-                                        );
-                                      }).toList(),
+                                    _ShopHeader(
+                                      coins: widget.game.coins,
+                                      rerollCost: widget.game.rerollCost,
+                                      canReroll:
+                                          widget.game.coins >=
+                                          widget.game.rerollCost,
+                                      onReroll: _rerollShop,
                                     ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: _UnlockedChipsList(
-                                      unlockedTokens: widget.game.unlockedTokens,
+                                    const SizedBox(height: 24),
+                                    Transform.translate(
+                                      offset: const Offset(-24, 0),
+                                      child: Wrap(
+                                        spacing: 24,
+                                        runSpacing: 24,
+                                        alignment: WrapAlignment.center,
+                                        children: _options.map((attr) {
+                                          final level =
+                                              widget
+                                                  .game
+                                                  .unlockedTokens[attr] ??
+                                              0;
+                                          final cost = _costForLevel(level);
+                                          final alreadyPurchased =
+                                              _purchasedThisSession.contains(
+                                                attr,
+                                              );
+                                          final canBuy =
+                                              !alreadyPurchased &&
+                                              level < 3 &&
+                                              widget.game.coins >= cost;
+                                          return _ShopOption(
+                                            attribute: attr,
+                                            level: level,
+                                            cost: cost,
+                                            canBuy: canBuy,
+                                            isLevelUp: level > 0,
+                                            grayedOut: alreadyPurchased,
+                                            onPurchase: () => _purchase(attr),
+                                          );
+                                        }).toList(),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: _UnlockedPerksList(
-                                      ownedPerks: widget.game.ownedPerks,
+                                    const SizedBox(height: 24),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: _UnlockedChipsList(
+                                        unlockedTokens:
+                                            widget.game.unlockedTokens,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 24),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: _UnlockedPerksList(
+                                        ownedPerks: widget.game.ownedPerks,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Container(
-                              width: 2,
-                              color: _pink.withValues(alpha: 0.5),
-                            ),
-                            _PerksPanel(
-                              perkOptions: _perkOptions,
-                              coins: widget.game.coins,
-                              perkCost: _perkCost,
-                              onPurchasePerk: _purchasePerk,
-                            ),
-                          ],
+                              Container(
+                                width: 2,
+                                color: _pink.withValues(alpha: 0.5),
+                              ),
+                              _PerksPanel(
+                                perkOptions: _perkOptions,
+                                coins: widget.game.coins,
+                                perkCost: _perkCost,
+                                onPurchasePerk: _purchasePerk,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
               const SizedBox(height: 4),
               ElevatedButton(
                 onPressed: () => widget.game.finishShop(),
@@ -388,31 +395,33 @@ class _UnlockedChipsList extends StatelessWidget {
           Wrap(
             spacing: 24,
             runSpacing: 12,
-            children: unlockedTokens.entries.map(
-              (e) => Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    _chipAssetPath(e.key),
-                    width: 48,
-                    height: 48,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) =>
-                        const SizedBox(width: 48, height: 48),
+            children: unlockedTokens.entries
+                .map(
+                  (e) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        _chipAssetPath(e.key),
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) =>
+                            const SizedBox(width: 48, height: 48),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '${e.key.label} Lv.${e.value}',
+                        style: const TextStyle(
+                          fontFamily: _fontFamily,
+                          fontSize: 28,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${e.key.label} Lv.${e.value}',
-                    style: const TextStyle(
-                      fontFamily: _fontFamily,
-                      fontSize: 28,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ).toList(),
+                )
+                .toList(),
           ),
       ],
     );
@@ -639,8 +648,7 @@ class _ShopOption extends StatelessWidget {
               width: 80,
               height: 80,
               fit: BoxFit.contain,
-              errorBuilder: (_, _, _) =>
-                  const SizedBox(width: 80, height: 80),
+              errorBuilder: (_, _, _) => const SizedBox(width: 80, height: 80),
             ),
             const SizedBox(height: 8),
             Text(
