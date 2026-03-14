@@ -57,10 +57,10 @@ abstract final class HealthConfig {
   static const memeLordFlashDuration = 3.0;
 
   /// Season 1-4 use a 1.2x exponential, after that it's
-  /// 1.2^3 * 1.18^(season-4).
+  /// 1.2^3 * 1.15^(season-4).
   static const drainEarlyBase = 1.2;
   static const drainEarlySeasons = 4;
-  static const drainLateBase = 1.18;
+  static const drainLateBase = 1.15;
 }
 
 // ─── Token Spawning ──────────────────────────────────────────────────────────
