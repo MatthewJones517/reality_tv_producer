@@ -182,6 +182,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
         unlockedTokens[attr] ?? 1,
       );
     }
+    AudioService.instance.playSfx(Sfx.purchase);
     return true;
   }
 
@@ -190,6 +191,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     if (ownedPerks.contains(perk)) return false;
     coins -= ShopConfig.perkCost;
     ownedPerks.add(perk);
+    AudioService.instance.playSfx(Sfx.purchase);
     return true;
   }
 

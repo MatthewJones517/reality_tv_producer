@@ -4,7 +4,7 @@ import 'package:flame_audio/flame_audio.dart';
 
 enum MusicTrack { intro, playfield, seasonChange }
 
-enum Sfx { coin, continuePress, fail, win, shoot, roll }
+enum Sfx { coin, continuePress, fail, win, shoot, roll, purchase }
 
 class AudioService {
   static final AudioService instance = AudioService._();
@@ -41,6 +41,7 @@ class AudioService {
     Sfx.win: 'sfx/win.mp3',
     Sfx.shoot: 'sfx/shoot.mp3',
     Sfx.roll: 'sfx/roll.mp3',
+    Sfx.purchase: 'sfx/purchase.mp3',
   };
 
   Future<void> init() async {
