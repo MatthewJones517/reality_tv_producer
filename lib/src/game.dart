@@ -61,9 +61,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     images.prefix = '';
     camera.moveTo(Vector2(_width / 2, _height / 2));
     world.add(TitleScreen());
-    AudioService.instance.init().then((_) {
-      AudioService.instance.playMusic(MusicTrack.intro);
-    });
+    AudioService.instance.init();
   }
 
   void submitShowName(String name) {
@@ -298,6 +296,7 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.space) {
       switch (_scene) {
         case GameScene.title:
+          AudioService.instance.playMusic(MusicTrack.intro);
           AudioService.instance.playSfx(Sfx.continuePress);
           _scene = GameScene.showName;
           overlays.add(Overlays.showName);
