@@ -1,6 +1,7 @@
 # Reality TV Producer
 
 ## Where to Play
+
 The main game page is on itch:
 https://makerinator.itch.io/reality-tv
 
@@ -50,19 +51,29 @@ While much of the art is my original work (namely the token designs) a lot came 
 As mentioned in the previous secion, I used the LPC Sprite Collection. As suggested [on their GitHub](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator) I have included their [CREDITS.csv](https://github.com/MatthewJones517/reality_tv_producer/blob/main/CREDITS.csv) with the project.
 
 ### Image Assets
+
 [TV Set by Kieff](https://opengameart.org/content/pixel-art-tv-set)
+
 [City Background by CraftPix](https://opengameart.org/content/simple-seamless-city-pixel-art-background)
+
 [Smoke Puff by Aidan_Walker](https://opengameart.org/content/smoke-puff)
 
 ### Music
+
 [Spring Thing by shiru8bit](https://opengameart.org/content/8-bit-chiptune-spring-thing)
+
 [Slam Funk by Haley Halcyon](https://opengameart.org/content/nes-chiptune-slam-funk)
+
 [Interlude Silly by 3XBlast](https://opengameart.org/content/chiptune-interlude-pack)
 
 ### Sound Effects
-[Wooden Dice Roll by Wuzzy](https://opengameart.org/content/wooden-dice-on-wodden-table-roll)
+
 [Chiptune SFX Pack by FrogPog](https://opengameart.org/content/chiptune-sfx-pack)
+
 [Level up, power up, Coin get by Wobbleboxx](https://opengameart.org/content/level-up-power-up-coin-get-13-sounds)
+
 [Power-Up Sound Effects by Spring Spring](https://opengameart.org/content/power-up-sound-effects)
+
 [Won! (Orchestral winning jingle) by spuispuin](https://opengameart.org/content/won-orchestral-winning-jingle)
+
 [gunloop 8bit by Luke.RUSTLTD](https://opengameart.org/content/gunloop-8bit)
