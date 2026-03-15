@@ -1,5 +1,7 @@
 # Reality TV Producer
 
+![Reality TV Producer Banner](https://raw.githubusercontent.com/MatthewJones517/reality_tv_producer/refs/heads/main/wide-cover.png)
+
 ## Where to Play
 
 The main game page is on itch:
