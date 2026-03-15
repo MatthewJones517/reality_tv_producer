@@ -20,6 +20,32 @@ void main() {
       body: GameWidget(
           game: game,
           focusNode: gameFocusNode,
+          loadingBuilder: (context) => Container(
+            color: Colors.black,
+            child: const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Loading...',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      fontSize: 48,
+                      color: AppTheme.pink,
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  SizedBox(
+                    width: 200,
+                    child: LinearProgressIndicator(
+                      color: AppTheme.pink,
+                      backgroundColor: Color(0xFF333333),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           overlayBuilderMap: {
             Overlays.showName: (context, game) =>
                 ShowNameScreen(game: game as RealityTvGame),

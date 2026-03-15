@@ -60,6 +60,32 @@ class RealityTvGame extends FlameGame with KeyboardEvents {
   Future<void> onLoad() async {
     images.prefix = '';
     camera.moveTo(Vector2(_width / 2, _height / 2));
+
+    try {
+      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      final allAssets = manifest.listAssets();
+      final imagePaths = allAssets
+          .where(
+            (p) =>
+                p.endsWith('.png') &&
+                (p.startsWith('assets/characters/') ||
+                    p.startsWith('assets/playfield/') ||
+                    p.startsWith('assets/title_screen/')),
+          )
+          .map(Uri.decodeFull)
+          .toList();
+
+      const batchSize = 10;
+      for (var i = 0; i < imagePaths.length; i += batchSize) {
+        final end = (i + batchSize).clamp(0, imagePaths.length);
+        await Future.wait(
+          imagePaths.sublist(i, end).map(images.load),
+        );
+      }
+    } catch (e, st) {
+      developer.log('Asset preload failed', error: e, stackTrace: st);
+    }
+
     world.add(TitleScreen());
     AudioService.instance.init();
   }
