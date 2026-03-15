@@ -50,7 +50,7 @@ I'm particiularly pleased with the procedural character generation. I used the i
 While much of the art is my original work (namely the token designs) a lot came from generous folks who have open sourced their work. I'd like to attribute their work here. 
 
 ### LPC Character Assets
-As mentioned in the previous secion, I used the LPC Sprite Collection. As suggested [on their GitHub](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator) I have included their [CREDITS.csv](https://github.com/MatthewJones517/reality_tv_producer/blob/main/CREDITS.csv) with the project.
+As mentioned in the previous section, I used the LPC Sprite Collection. As suggested [on their GitHub](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator) I have included their [CREDITS.csv](https://github.com/MatthewJones517/reality_tv_producer/blob/main/CREDITS.csv) with the project.
 
 ### Image Assets
 
