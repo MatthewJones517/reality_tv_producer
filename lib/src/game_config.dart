@@ -48,7 +48,7 @@ abstract final class ShopConfig {
 abstract final class HealthConfig {
   static const maxHealth = 100.0;
   static const initialHealth = 100.0;
-  static const baseDrainRate = 3.0;
+  static const baseDrainRate = 2.5;
   static const baseHealthGain = 5.0;
   static const marketingBudgetCoinBonus = 0.5;
 
