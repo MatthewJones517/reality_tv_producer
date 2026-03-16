@@ -49,6 +49,8 @@ class TokenBody extends PositionComponent {
   final f2d.Body body;
   final double physScale;
   Sprite? _sprite;
+  static final ui.Paint _spritePaint = ui.Paint()
+    ..filterQuality = ui.FilterQuality.low;
 
   TokenBody({
     required this.type,
@@ -77,15 +79,14 @@ class TokenBody extends PositionComponent {
     await loadSprite(imageLoader);
   }
 
-  Future<void> loadSprite(
-    Future<ui.Image> Function(String) imageLoader,
-  ) async {
+  Future<void> loadSprite(Future<ui.Image> Function(String) imageLoader) async {
     final path = switch ((type, attribute)) {
       (TokenType.coin, _) => 'assets/playfield/coin.png',
       (TokenType.drama, null) => 'assets/playfield/Drama_Chip.png',
-      (TokenType.drama, final a) => a != null
-          ? 'assets/playfield/${a.name[0].toUpperCase()}${a.name.substring(1)}_Chip.png'
-          : 'assets/playfield/Drama_Chip.png',
+      (TokenType.drama, final a) =>
+        a != null
+            ? 'assets/playfield/${a.name[0].toUpperCase()}${a.name.substring(1)}_Chip.png'
+            : 'assets/playfield/Drama_Chip.png',
     };
     final image = await imageLoader(path);
     _sprite = Sprite(image);
@@ -100,10 +101,6 @@ class TokenBody extends PositionComponent {
 
   @override
   void render(ui.Canvas canvas) {
-    _sprite?.render(
-      canvas,
-      size: size,
-      overridePaint: ui.Paint()..filterQuality = ui.FilterQuality.low,
-    );
+    _sprite?.render(canvas, size: size, overridePaint: _spritePaint);
   }
 }

@@ -1,9 +1,11 @@
 import 'dart:math';
+import 'dart:developer' as developer;
 import 'dart:ui' as ui;
 
 import 'package:flame/components.dart';
 import 'package:flame/sprite.dart';
 import 'package:forge2d/forge2d.dart' as f2d;
+import 'package:flutter/foundation.dart';
 
 import 'audio_service.dart';
 import 'character.dart';
@@ -35,6 +37,8 @@ class CoinPusher extends PositionComponent
   static const _outerDisableMargin = 100.0;
 
   static const _fireCooldown = 0.15;
+  static const _coinPoolMaxSize = 160;
+  static const _perfLogIntervalSeconds = 5.0;
 
   late final f2d.World _world;
   final _random = Random();
@@ -42,7 +46,7 @@ class CoinPusher extends PositionComponent
   PusherBody? _pusher;
   ui.Image? _launcherImage;
   ui.Image? _edgeImage;
-  ui.Image? _smokeImage;
+  SpriteSheet? _smokeSheet;
   double _edgeWidth = 0;
   ui.Image? coinImage;
   ui.Image? dramaImage;
@@ -50,6 +54,7 @@ class CoinPusher extends PositionComponent
   final Map<Attribute, ui.Image> _attributeImages = {};
 
   final List<TokenBody> _pendingRemoval = [];
+  final List<f2d.Body> _coinBodyPool = [];
   int coinsCollected = 0;
   double health = HealthConfig.initialHealth;
   double launcherAngle = 0;
@@ -57,6 +62,19 @@ class CoinPusher extends PositionComponent
 
   late final ScoringEngine _scoring;
   late final TokenQueue _tokenQueue;
+  late final _ContactListener _contactListener;
+  bool _worldReady = false;
+  bool _disposed = false;
+
+  final ui.Paint _bgPaint = ui.Paint()..color = const ui.Color(_bgColor);
+  final ui.Paint _edgeImagePaint = ui.Paint()
+    ..filterQuality = ui.FilterQuality.low;
+  final ui.Paint _edgeBlackPaint = ui.Paint()
+    ..color = const ui.Color(0xFF000000);
+
+  double _perfTimer = 0;
+  int _perfFrames = 0;
+  double _perfStepMsTotal = 0;
 
   List<QueueToken> get tokenQueue => _tokenQueue.queue;
 
@@ -166,12 +184,14 @@ class CoinPusher extends PositionComponent
     final spawnX = originX + cos(angle) * offset;
     final spawnY = originY + sin(angle) * offset;
 
-    final body = _createTokenBody(
-      spawnX * _scale,
-      spawnY * _scale,
-      radius,
-      bullet: true,
-    );
+    final body = queueToken is CoinQueueToken
+        ? _acquireCoinBody(spawnX * _scale, spawnY * _scale, radius)
+        : _createTokenBody(
+            spawnX * _scale,
+            spawnY * _scale,
+            radius,
+            bullet: true,
+          );
 
     final vx = cos(angle) * _shootSpeed * _scale;
     final vy = sin(angle) * _shootSpeed * _scale;
@@ -195,7 +215,8 @@ class CoinPusher extends PositionComponent
     for (final attr in Attribute.values) {
       _attributeImages[attr] = await game.images.load(Assets.chipPath(attr));
     }
-    _smokeImage = await game.images.load(Assets.smoke);
+    final smokeImage = await game.images.load(Assets.smoke);
+    _smokeSheet = SpriteSheet(image: smokeImage, srcSize: Vector2(32, 32));
     tvImage = await game.images.load(Assets.tvNoAntenna);
     final pusherImage = await game.images.load(Assets.pusher);
 
@@ -204,7 +225,11 @@ class CoinPusher extends PositionComponent
     f2d.velocityIterations = 4;
     f2d.positionIterations = 2;
     _world = f2d.World(f2d.Vector2.zero());
-    _world.setContactListener(_ContactListener(this));
+    // Keep sleep behavior explicit and consistent across targets.
+    _world.setAllowSleep(true);
+    _contactListener = _ContactListener(this);
+    _world.setContactListener(_contactListener);
+    _worldReady = true;
 
     _createWalls();
     _createDropZone();
@@ -283,6 +308,8 @@ class CoinPusher extends PositionComponent
     double physY,
     double radius, {
     bool bullet = false,
+    bool allowSleep = true,
+    bool isAwake = true,
   }) {
     final bodyDef = f2d.BodyDef(
       type: f2d.BodyType.dynamic,
@@ -290,6 +317,9 @@ class CoinPusher extends PositionComponent
       linearDamping: 2.0,
       angularDamping: 1.0,
       bullet: bullet,
+      // Dynamic token bodies are allowed to auto-sleep when settled.
+      allowSleep: allowSleep,
+      isAwake: isAwake,
     );
     final body = _world.createBody(bodyDef);
     final shape = f2d.CircleShape()..radius = radius;
@@ -297,6 +327,44 @@ class CoinPusher extends PositionComponent
       f2d.FixtureDef(shape, friction: 0.3, restitution: 0.2, density: 1.0),
     );
     return body;
+  }
+
+  f2d.Body _acquireCoinBody(double physX, double physY, double radius) {
+    if (_coinBodyPool.isEmpty) {
+      return _createTokenBody(
+        physX,
+        physY,
+        radius,
+        bullet: true,
+        allowSleep: true,
+        isAwake: true,
+      );
+    }
+    final body = _coinBodyPool.removeLast();
+    body.setActive(true);
+    body.setSleepingAllowed(true);
+    body.setTransform(f2d.Vector2(physX, physY), 0);
+    body.linearVelocity = f2d.Vector2.zero();
+    body.angularVelocity = 0;
+    body.clearForces();
+    body.setAwake(true);
+    body.isBullet = true;
+    return body;
+  }
+
+  bool _releaseCoinBody(f2d.Body body) {
+    if (_world.isLocked || _coinBodyPool.length >= _coinPoolMaxSize) {
+      return false;
+    }
+    body.userData = null;
+    body.linearVelocity = f2d.Vector2.zero();
+    body.angularVelocity = 0;
+    body.clearForces();
+    body.setAwake(false);
+    body.setActive(false);
+    body.isBullet = false;
+    _coinBodyPool.add(body);
+    return true;
   }
 
   Future<void> _addTokenFromQueue(QueueToken queueToken, f2d.Body body) async {
@@ -344,10 +412,8 @@ class CoinPusher extends PositionComponent
   // ─── Effects ─────────────────────────────────────────────────────────────
 
   void _spawnSmoke(Vector2 position, double tokenSize) {
-    final img = _smokeImage;
-    if (img == null) return;
-
-    final sheet = SpriteSheet(image: img, srcSize: Vector2(32, 32));
+    final sheet = _smokeSheet;
+    if (sheet == null) return;
     final animation = sheet.createAnimation(
       row: 0,
       stepTime: 0.05,
@@ -378,18 +444,79 @@ class CoinPusher extends PositionComponent
     if (health <= 0) game.triggerGameOver();
 
     if (_launcherCooldown > 0) _launcherCooldown -= dt;
+    final stepWatch = kDebugMode ? (Stopwatch()..start()) : null;
     _world.stepDt(dt);
+    if (stepWatch != null) {
+      stepWatch.stop();
+      _perfStepMsTotal += stepWatch.elapsedMicroseconds / 1000.0;
+      _perfTimer += dt;
+      _perfFrames++;
+      if (_perfTimer >= _perfLogIntervalSeconds) {
+        _logPerformanceSnapshot();
+      }
+    }
 
     for (final token in _pendingRemoval) {
       if (token.type == TokenType.coin) coinsCollected++;
       if (token.type == TokenType.drama) {
         _spawnSmoke(token.position, token.size.x);
       }
-      _world.destroyBody(token.body);
+      final released =
+          token.type == TokenType.coin && _releaseCoinBody(token.body);
+      if (!released) {
+        _world.destroyBody(token.body);
+      }
       _tokens.remove(token);
       token.removeFromParent();
     }
     _pendingRemoval.clear();
+  }
+
+  void _logPerformanceSnapshot() {
+    if (_perfFrames == 0) return;
+    var dynamicCount = 0;
+    var sleepingDynamicCount = 0;
+    for (final body in _world.bodies) {
+      if (body.bodyType != f2d.BodyType.dynamic) continue;
+      dynamicCount++;
+      if (!body.isAwake) sleepingDynamicCount++;
+    }
+    final avgStepMs = _perfStepMsTotal / _perfFrames;
+    developer.log(
+      'avgStepMs=${avgStepMs.toStringAsFixed(3)} '
+      'tokens=${_tokens.length} '
+      'pending=${_pendingRemoval.length} '
+      'dynamicBodies=$dynamicCount '
+      'sleepingDynamic=$sleepingDynamicCount '
+      'coinPool=${_coinBodyPool.length}',
+      name: 'CoinPusherPerf',
+    );
+    _perfTimer = 0;
+    _perfFrames = 0;
+    _perfStepMsTotal = 0;
+  }
+
+  void _teardownWorld() {
+    if (_disposed || !_worldReady) return;
+    _disposed = true;
+    _pendingRemoval.clear();
+    for (final token in List<TokenBody>.from(_tokens)) {
+      token.removeFromParent();
+    }
+    _tokens.clear();
+    _coinBodyPool.clear();
+    _pusher = null;
+    if (_world.isLocked) return;
+    final bodies = List<f2d.Body>.from(_world.bodies);
+    for (final body in bodies) {
+      _world.destroyBody(body);
+    }
+  }
+
+  @override
+  void onRemove() {
+    _teardownWorld();
+    super.onRemove();
   }
 
   // ─── Rendering ───────────────────────────────────────────────────────────
@@ -399,10 +526,7 @@ class CoinPusher extends PositionComponent
   @override
   void render(ui.Canvas canvas) {
     canvas.clipRect(size.toRect());
-    canvas.drawRect(
-      size.toRect(),
-      ui.Paint()..color = const ui.Color(_bgColor),
-    );
+    canvas.drawRect(size.toRect(), _bgPaint);
     super.render(canvas);
     _renderEdge(canvas);
   }
@@ -421,12 +545,7 @@ class CoinPusher extends PositionComponent
         img.height.toDouble(),
       );
       final dstRect = ui.Rect.fromLTWH(graphicX, 0, zoneWidth, fieldHeight);
-      canvas.drawImageRect(
-        img,
-        srcRect,
-        dstRect,
-        ui.Paint()..filterQuality = ui.FilterQuality.low,
-      );
+      canvas.drawImageRect(img, srcRect, dstRect, _edgeImagePaint);
       // Overlap by 2px to avoid gray seam from sub-pixel gap or edge image
       canvas.drawRect(
         ui.Rect.fromLTWH(
@@ -435,7 +554,7 @@ class CoinPusher extends PositionComponent
           extraBlackWidth + 2,
           fieldHeight,
         ),
-        ui.Paint()..color = const ui.Color(0xFF000000),
+        _edgeBlackPaint,
       );
     } else {
       canvas.drawRect(
@@ -445,7 +564,7 @@ class CoinPusher extends PositionComponent
           zoneWidth + extraBlackWidth,
           fieldHeight,
         ),
-        ui.Paint()..color = const ui.Color(0xFF000000),
+        _edgeBlackPaint,
       );
     }
   }
